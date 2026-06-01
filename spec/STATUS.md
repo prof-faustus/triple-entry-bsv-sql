@@ -20,7 +20,7 @@ Updated: 2026-06-01. Legend: ✅ done · 🟡 partial/in-progress · ⛔ blocked
 - Helpers: `node-docker/lib/reset-regtest.sh` (clean chain), `services-go/run-harden-e2e-wsl.sh`.
 
 ### Appendix A/B coverage summary
-All 12 Appendix-B done-criteria demonstrated as vertical slices: B.1 (TS↔Go parity; C-clause open),
+All 12 Appendix-B done-criteria demonstrated as vertical slices: B.1 (**C↔TS↔Go parity, fully closed**),
 B.2–B.6 (keystone, SQL surface, cold-rebuild, no-P2SH/OP_RETURN, sighash), B.7 (definable token + swap),
 B.8 (EDI DFAs + bridge), B.9 (logistics/ownership/integrity/DvP/B-L), B.10 (SPV+BURI/custody/overlay/
 compute), B.11 (resilience), B.12 (grounding). Appendix A requirements are met or slice-scoped per the
@@ -137,7 +137,7 @@ operator) and the CTO spec re-derived rather than supplied (E1). See "Blockers /
 | Canonical length-prefixed encoder/decoder | ✅ | `Writer`/`Reader`, message + record; round-trip + rejection tests |
 | AEAD (AES-256-GCM, re-derived) | ✅ | encrypt/decrypt + tamper-fail; vector match (TS+Go) |
 | **Cross-impl vectors identical** (`SYS-TEST-003`) | ✅ | Go `TestCoreVectors` recomputes the TS-generated `crypto-core/vectors/core_vectors.json` byte-for-byte; 14 TS + 7 Go tests green |
-| **C ↔ TS/Go parity** (Appendix B.1 C clause) | ⏸ OPEN | C binding deferred (E3); to be added when a toolchain exists |
+| **C ↔ TS/Go parity** (Appendix B.1 C clause) | ✅ | `crypto-core/c` (libsecp256k1 + OpenSSL) reproduces the shared vectors **40/40 byte-for-byte** (built+run in WSL); **B.1 fully closed** |
 
 Run: `cd crypto-core/ts && NODE_OPTIONS=--use-system-ca npm test` · `cd crypto-core/go && go test ./...`
 Regenerate vectors (TS is the source of truth): `cd crypto-core/ts && npm run gen-vectors`.
