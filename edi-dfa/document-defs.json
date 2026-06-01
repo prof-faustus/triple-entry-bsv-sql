@@ -1,0 +1,115 @@
+[
+  { "doc_type": "rfq", "initial": "DRAFTED", "final": ["QUOTED", "CANCELLED"],
+    "transitions": [
+      {"from":"DRAFTED","event":"issue","to":"ISSUED"},
+      {"from":"ISSUED","event":"quote","to":"QUOTED"},
+      {"from":"ISSUED","event":"cancel","to":"CANCELLED"}]},
+
+  { "doc_type": "quotation", "initial": "DRAFTED", "final": ["ACCEPTED", "REJECTED", "EXPIRED"],
+    "transitions": [
+      {"from":"DRAFTED","event":"issue","to":"ISSUED"},
+      {"from":"ISSUED","event":"accept","to":"ACCEPTED"},
+      {"from":"ISSUED","event":"reject","to":"REJECTED"},
+      {"from":"ISSUED","event":"expire","to":"EXPIRED"}]},
+
+  { "doc_type": "purchase_order", "initial": "DRAFTED", "final": ["FULFILLED", "CANCELLED"],
+    "transitions": [
+      {"from":"DRAFTED","event":"issue","to":"ISSUED"},
+      {"from":"ISSUED","event":"acknowledge","to":"ACKNOWLEDGED"},
+      {"from":"ACKNOWLEDGED","event":"fulfil","to":"FULFILLED"},
+      {"from":"ISSUED","event":"cancel","to":"CANCELLED"},
+      {"from":"ACKNOWLEDGED","event":"cancel","to":"CANCELLED"}]},
+
+  { "doc_type": "order_ack", "initial": "PENDING", "final": ["ACCEPTED", "CHANGED", "REJECTED"],
+    "transitions": [
+      {"from":"PENDING","event":"accept","to":"ACCEPTED"},
+      {"from":"PENDING","event":"change","to":"CHANGED"},
+      {"from":"PENDING","event":"reject","to":"REJECTED"}]},
+
+  { "doc_type": "invoice", "initial": "DRAFTED", "final": ["PAID"],
+    "transitions": [
+      {"from":"DRAFTED","event":"issue","to":"ISSUED"},
+      {"from":"ISSUED","event":"dispute","to":"DISPUTED"},
+      {"from":"DISPUTED","event":"resolve","to":"ISSUED"},
+      {"from":"ISSUED","event":"settle","to":"PAID"}]},
+
+  { "doc_type": "payment_note", "initial": "DRAFTED", "final": ["SETTLED"],
+    "transitions": [
+      {"from":"DRAFTED","event":"instruct","to":"INSTRUCTED"},
+      {"from":"INSTRUCTED","event":"settle","to":"SETTLED"}]},
+
+  { "doc_type": "credit_note", "initial": "DRAFTED", "final": ["APPLIED"],
+    "transitions": [{"from":"DRAFTED","event":"issue","to":"ISSUED"},{"from":"ISSUED","event":"apply","to":"APPLIED"}]},
+  { "doc_type": "debit_note", "initial": "DRAFTED", "final": ["APPLIED"],
+    "transitions": [{"from":"DRAFTED","event":"issue","to":"ISSUED"},{"from":"ISSUED","event":"apply","to":"APPLIED"}]},
+
+  { "doc_type": "despatch_advice", "initial": "DRAFTED", "final": ["RECEIVED"],
+    "transitions": [{"from":"DRAFTED","event":"send","to":"SENT"},{"from":"SENT","event":"receive","to":"RECEIVED"}]},
+
+  { "doc_type": "bill_of_lading", "initial": "ISSUED", "final": ["SURRENDERED"],
+    "transitions": [
+      {"from":"ISSUED","event":"endorse","to":"ENDORSED"},
+      {"from":"ENDORSED","event":"endorse","to":"ENDORSED"},
+      {"from":"ENDORSED","event":"surrender","to":"SURRENDERED"},
+      {"from":"ISSUED","event":"surrender","to":"SURRENDERED"}]},
+
+  { "doc_type": "sea_waybill", "initial": "ISSUED", "final": ["DELIVERED"],
+    "transitions": [{"from":"ISSUED","event":"deliver","to":"DELIVERED"}]},
+  { "doc_type": "air_waybill", "initial": "ISSUED", "final": ["DELIVERED"],
+    "transitions": [{"from":"ISSUED","event":"deliver","to":"DELIVERED"}]},
+  { "doc_type": "cmr", "initial": "ISSUED", "final": ["DELIVERED"],
+    "transitions": [{"from":"ISSUED","event":"depart","to":"IN_TRANSIT"},{"from":"IN_TRANSIT","event":"deliver","to":"DELIVERED"}]},
+  { "doc_type": "rail_consignment_note", "initial": "ISSUED", "final": ["DELIVERED"],
+    "transitions": [{"from":"ISSUED","event":"depart","to":"IN_TRANSIT"},{"from":"IN_TRANSIT","event":"deliver","to":"DELIVERED"}]},
+
+  { "doc_type": "packing_list", "initial": "DRAFTED", "final": ["FINALISED"],
+    "transitions": [{"from":"DRAFTED","event":"finalise","to":"FINALISED"}]},
+
+  { "doc_type": "booking_confirmation", "initial": "REQUESTED", "final": ["CONFIRMED", "CANCELLED"],
+    "transitions": [
+      {"from":"REQUESTED","event":"confirm","to":"CONFIRMED"},
+      {"from":"CONFIRMED","event":"amend","to":"CONFIRMED"},
+      {"from":"REQUESTED","event":"cancel","to":"CANCELLED"}]},
+
+  { "doc_type": "arrival_notice", "initial": "ISSUED", "final": ["ACKNOWLEDGED"],
+    "transitions": [{"from":"ISSUED","event":"acknowledge","to":"ACKNOWLEDGED"}]},
+
+  { "doc_type": "proof_of_delivery", "initial": "PENDING", "final": ["SIGNED"],
+    "transitions": [{"from":"PENDING","event":"sign","to":"SIGNED"}]},
+
+  { "doc_type": "certificate_of_origin", "initial": "DRAFTED", "final": ["VERIFIED"],
+    "transitions": [{"from":"DRAFTED","event":"issue","to":"ISSUED"},{"from":"ISSUED","event":"verify","to":"VERIFIED"}]},
+  { "doc_type": "customs_declaration", "initial": "DRAFTED", "final": ["CLEARED", "HELD"],
+    "transitions": [
+      {"from":"DRAFTED","event":"lodge","to":"LODGED"},
+      {"from":"LODGED","event":"clear","to":"CLEARED"},
+      {"from":"LODGED","event":"hold","to":"HELD"},
+      {"from":"HELD","event":"clear","to":"CLEARED"}]},
+  { "doc_type": "inspection_certificate", "initial": "PENDING", "final": ["PASSED", "FAILED"],
+    "transitions": [{"from":"PENDING","event":"pass","to":"PASSED"},{"from":"PENDING","event":"fail","to":"FAILED"}]},
+  { "doc_type": "insurance_certificate", "initial": "DRAFTED", "final": ["CLAIMED", "EXPIRED"],
+    "transitions": [
+      {"from":"DRAFTED","event":"issue","to":"ISSUED"},
+      {"from":"ISSUED","event":"claim","to":"CLAIMED"},
+      {"from":"ISSUED","event":"expire","to":"EXPIRED"}]},
+
+  { "doc_type": "consignment", "initial": "CREATED", "final": ["SETTLED", "RECOVERED"],
+    "transitions": [
+      {"from":"CREATED","event":"book","to":"BOOKED"},
+      {"from":"BOOKED","event":"pickup","to":"PICKED_UP"},
+      {"from":"PICKED_UP","event":"depart","to":"IN_TRANSIT"},
+      {"from":"IN_TRANSIT","event":"customs_hold","to":"CUSTOMS_HELD"},
+      {"from":"IN_TRANSIT","event":"customs_clear","to":"CUSTOMS_CLEARED"},
+      {"from":"CUSTOMS_HELD","event":"customs_clear","to":"CUSTOMS_CLEARED"},
+      {"from":"CUSTOMS_CLEARED","event":"inspect","to":"INSPECTED"},
+      {"from":"INSPECTED","event":"custody_transfer","to":"CUSTODY_TRANSFER"},
+      {"from":"CUSTODY_TRANSFER","event":"depart","to":"IN_TRANSIT"},
+      {"from":"CUSTODY_TRANSFER","event":"deliver","to":"DELIVERED"},
+      {"from":"INSPECTED","event":"deliver","to":"DELIVERED"},
+      {"from":"DELIVERED","event":"accept","to":"ACCEPTED"},
+      {"from":"DELIVERED","event":"reject","to":"REJECTED"},
+      {"from":"ACCEPTED","event":"settle","to":"SETTLED"},
+      {"from":"IN_TRANSIT","event":"dispute","to":"DISPUTED"},
+      {"from":"DISPUTED","event":"resolve","to":"IN_TRANSIT"},
+      {"from":"REJECTED","event":"recover","to":"RECOVERED"}]}
+]

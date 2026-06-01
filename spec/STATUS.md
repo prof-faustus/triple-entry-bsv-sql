@@ -2,10 +2,25 @@
 
 Updated: 2026-06-01. Legend: ✅ done · 🟡 partial/in-progress · ⛔ blocked · ⬜ not started.
 
-## Current phase: **Phase 4 — Definable token ✅ COMPLETE** (operator-confirmed past checkpoint)
+## Current phase: **Phase 5 — EDI DFA + logistics + bridge ✅ COMPLETE** (operator-confirmed)
 
-> Progress: Phases 0–3 ✅, **Phase 4 ✅** (definable token: cash profiles, goods, atomic swap,
-> external-linkage adapter contract). Next: Phase 5 (EDI DFA + bridge + logistics).
+> Progress: Phases 0–4 ✅, **Phase 5 ✅** (EDI document DFAs, logistics, X12/EDIFACT bridge).
+> Next: Phase 6 (proofs / custody / overlay / computation).
+
+### Phase 5 result (2026-06-01) — PASS (Appendix B.8, B.9, on regtest)
+- `services-go/edi` (DFA-as-UTXO engine + DHT + ownership/integrity), `edibridge`, `cmd/edie2e`;
+  document set in `edi-dfa/document-defs.json` (23 DFAs incl. consignment).
+- **B.8**: all **22 SYS-EDI-002 document types** driven through their DFA lifecycles on-chain
+  (states-as-UTXOs, transitions journalled + tag-verified, `SYS-EDI-001/002/003`); cross-references by
+  object_id verified from chain (`SYS-EDI-004`); **X12/EDIFACT bridge** (`edibridge`) maps the listed
+  message types in/out, per-partner subset, **omittable** (core `edi` doesn't import it) — go tests green
+  (`SYS-EDI-005/006`).
+- **B.9** (`SYS-LOG-001..012`): consignment lifecycle + multi-party `CUSTODY_TRANSFER`;
+  **bill-of-lading-as-token** title transfer (issue→endorse→surrender, controller re-key);
+  **ownership** key-match (US11210372; mismatch rejected); **integrity** H3==H4 (GB2558485A; tamper
+  detected); **delivery-versus-payment** (ACCEPTED + POD SIGNED → payment SETTLED). DHT = local store.
+- Reproduce: `edi-dfa/run-edi-e2e-wsl.sh`. Scope: representative field-level content; full per-message
+  X12/EDIFACT field mapping and the DHT-as-distributed-store are slices.
 
 ### Phase 4 result (2026-06-01) — PASS (Appendix B.7, on regtest)
 - `services-go/token` + `cmd/tokene2e`; defs in `tokenisation/token-defs.json`.
