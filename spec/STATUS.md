@@ -2,31 +2,27 @@
 
 Updated: 2026-06-01. Legend: ✅ done · 🟡 partial/in-progress · ⛔ blocked · ⬜ not started.
 
-## Current phase: **Phase 2 — Node + hash-chain log** (2a ✅ node up, 2b ✅ envelope, 2c in progress)
+## Current phase: **Phase 2 — Node + hash-chain log ✅ COMPLETE** (next: Phase 3, gated on C toolchain)
 
-> Progress: Phase 0 ✅ (regtest confirmed), Phase 1 ✅ (TS/Go crypto core, parity green),
-> Phase 2a ✅ (Teranode regtest up in WSL Docker), Phase 2b ✅ (spendable data-envelope builder).
-> **Phase 2c (broadcast + discovery + cold-rebuild on regtest) is the remaining Phase-2 work.**
+> Progress: Phase 0 ✅, Phase 1 ✅ (TS/Go crypto core, parity green), **Phase 2 ✅** —
+> 2a (Teranode regtest up), 2b (spendable envelope), 2c (broadcast + discovery + cold-rebuild on the
+> live regtest node). Phase 3 (PostgreSQL-18 C fork) is gated on a C toolchain (E3, deferred).
 
-### Phase 2c plan (de-risked 2026-06-01; not yet built)
-Funding mechanism **verified viable** on Teranode regtest:
-- `generatetoaddress <addr>` mines a coinbase with a P2PKH output to a key we control; for a
-  single-tx block **`merkleroot == coinbase txid`**, and `getrawtransaction <txid>` returns the raw
-  coinbase (3 standard P2PKH outputs observed). Mine +100 blocks for coinbase maturity, then spend.
-- go-sdk confirmed for tx build/sign: `transaction.NewTransaction`, `AddInputFrom`,
-  `p2pkh.Unlock(priv, &sighash.AllForkID)`, `tx.Sign()`, `tx.Hex()`/`TxID()`; broadcast via
-  `sendrawtransaction`; mine via `generate`.
+### Phase 2c result (2026-06-01) — PASS on live Teranode regtest
+`services-go/cmd/streame2e` ran end-to-end against the regtest node (executed inside WSL to avoid a
+Windows-exe launch stall under Defender; node is local to WSL):
+- **Funded** from a matured coinbase (50 BSV) paid to a controlled key via `generatetoaddress`;
+  located via `merkleroot == coinbase txid` + `getrawtransaction`, matured with +100 blocks.
+- **Broadcast** a 4-entry hash-chained ECDH-HMAC stream; each tx carries its record in a spendable
+  `OP_FALSE OP_IF <REC> OP_ENDIF + P2PKH` envelope (no OP_RETURN/P2SH), signed `SIGHASH_ALL|FORKID`,
+  spending the prior tx's output so the UTXO lineage **is** the stream (`prev_txid` links `M(c)`).
+- **Discovery**: each tag recomputed from `M(c)`+keys matched the on-chain record.
+- **Cold-rebuild**: from the head txid + master keys alone, walked the chain via `prev_txid`, verified
+  every tag, and reconstructed the ledger (2 cells across 4 chained changes) == source.
+- Record format refined so it is self-describing: REC now embeds `encode(M(c))` (ALGORITHMS.md §1.2);
+  TS+Go vectors regenerated, parity green. Reproduce: `node-docker/lib/run-e2e-wsl.sh`.
 
-Remaining build (Go, `services-go`): fund → build a stream of N txs, each carrying a hash-chained
-ECDH-HMAC record in a spendable envelope (`bsvscript`), spending the prior tx's P2PKH output so the
-UTXO lineage **is** the stream; broadcast each; tag-discovery index `(table,row,col,seq)→txid`;
-cold-rebuild the toy stream from genesis + master keys, asserting equality. Exit: Appendix B.2/B.5/B.6.
-
-**Design refinement needed for self-contained cold-rebuild (`SYS-PG-004`, `SYS-HMAC-010`):** the
-on-chain record must carry the canonical `M(c)` (table/row/column/op + seq + prev_txid) so the row is
-reconstructable from chain alone. Plan: redefine REC = `MAGIC_R, version, stream_id, encode(M(c)),
-image_kind, change_image, tag` (ALGORITHMS.md §1.2). This changes only the `encodedRecord` KAT vector
-(GV/CS/tag are unaffected); regenerate vectors and re-run TS+Go parity.
+**Phase 2 exit (Appendix B.2/B.5/B.6) met.**
 
 ---
 
@@ -80,7 +76,11 @@ freeze/scaffold state — no functional code yet.
 | `SYS-NODE-001/003`, `SYS-CON-006` | ✅ | Teranode regtest up in WSL Docker; blocks on demand; reproducible (`node-docker/`). |
 | `SYS-NODE-002` (RPC + events) | 🟡 | RPC verified (getblockchaininfo/generate/getblock); Kafka topics identified (B7); `services-go` wiring is Phase 2c. |
 | `SYS-ENC-005` (canonical encoding) | 🟡 | Encoder/decoder done in TS+Go (`crypto-core`); C side + on-chain script wiring later. |
-| `SYS-ENC-001/002`, `SYS-CON-002/008` (spendable data envelope) | 🟡 | `services-go/bsvscript`: OP_FALSE OP_IF / OP_DROP carriers + native P2PKH tail; data round-trip; **static check rejects P2SH/OP_RETURN/data-only** (Appendix B.5 logic). Go tests green. On-chain broadcast = Phase 2c. |
+| `SYS-ENC-001/002`, `SYS-CON-002/008` (spendable data envelope) | ✅ | `services-go/bsvscript` carriers + static check; **broadcast & accepted on regtest** in the e2e (B.5). |
+| `SYS-HMAC-005/006/008` (tag on-chain, discovery, hash chain) | ✅ | e2e: tag in spendable script; recomputed-tag discovery; `prev_txid` chain walked in cold-rebuild (B.2). |
+| `SYS-ENC-004` (sighash binds successors) | ✅ | all stream txs signed `SIGHASH_ALL\|FORKID` and accepted (B.6). |
+| `SYS-PG-004` (cold-rebuild from chain) | 🟡 | demonstrated on the toy on-chain stream (chain+keys → ledger); full DB cold-rebuild is Phase 3. |
+| `SYS-NODE-002` (RPC + events) | 🟡 | RPC client (`services-go/node`) broadcasts/queries live; Kafka event relay still Phase 2+ wiring. |
 | `SYS-HMAC-002/003/004` (GV/subkeys/CS, K_hmac, tag) | 🟡 | Algorithms implemented + KAT-green in TS+Go; on-chain placement (`SYS-HMAC-005`), hash chain (`008`), discoverability (`006`) are Phase 2. |
 | `SYS-HMAC-009` (blinded commitment) | 🟡 | `commit` done TS+Go. |
 | `SYS-TEST-003` (cross-impl vectors) | 🟡 | TS↔Go green; C clause open. |

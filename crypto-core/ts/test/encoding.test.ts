@@ -30,8 +30,7 @@ test("Reader rejects truncation, trailing bytes, bad utf8, oversized length", ()
 test("record encode/decode round-trip", () => {
   const rec = {
     streamId: utf8("ledger.invoices"),
-    seq: 7n,
-    prevTxid: hexToBytes("ab".repeat(32)),
+    message: { tableId: "ledger.invoices", rowId: hexToBytes("0001"), columnId: "amount", op: Op.UPDATE, seq: 7n, prevTxid: hexToBytes("ab".repeat(32)) },
     imageKind: ImageKind.COMMITMENT,
     changeImage: hexToBytes("cd".repeat(32)),
     tag: hexToBytes("ef".repeat(32)),
@@ -39,15 +38,15 @@ test("record encode/decode round-trip", () => {
   const enc = encodeRecord(rec);
   const dec = decodeRecord(enc);
   assert.equal(bytesToHex(encodeRecord(dec)), bytesToHex(enc));
-  assert.equal(dec.seq, 7n);
+  assert.equal(dec.message.seq, 7n);
+  assert.equal(dec.message.columnId, "amount");
   assert.equal(dec.imageKind, ImageKind.COMMITMENT);
 });
 
 test("record decode rejects bad magic and trailing bytes", () => {
   const enc = encodeRecord({
     streamId: utf8("s"),
-    seq: 0n,
-    prevTxid: new Uint8Array(0),
+    message: { tableId: "t", rowId: new Uint8Array(0), columnId: "c", op: Op.INSERT, seq: 0n, prevTxid: new Uint8Array(0) },
     imageKind: ImageKind.PLAINTEXT,
     changeImage: utf8("v"),
     tag: hexToBytes("00".repeat(32)),

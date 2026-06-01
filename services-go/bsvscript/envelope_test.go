@@ -30,7 +30,7 @@ func buildRealRecord(t *testing.T) []byte {
 		t.Fatal(err)
 	}
 	img := cc.ChangeImage(cc.ImagePlaintext, []byte("1500.00"), nil)
-	rec, err := cc.EncodeRecord(cc.FieldRecord{StreamID: []byte(m.TableID), Seq: m.Seq, PrevTxid: m.PrevTxid, ImageKind: cc.ImagePlaintext, ChangeImage: img, Tag: cc.Tag(k, img)})
+	rec, err := cc.EncodeRecord(cc.FieldRecord{StreamID: []byte(m.TableID), Message: m, ImageKind: cc.ImagePlaintext, ChangeImage: img, Tag: cc.Tag(k, img)})
 	if err != nil {
 		t.Fatal(err)
 	}

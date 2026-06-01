@@ -84,7 +84,7 @@ const out = {
     const kHmac = deriveHmacKey(csW, c.m);
     const img = changeImage(c.kind, c.value, c.blinding);
     const t = makeTag(kHmac, img);
-    const rec = encodeRecord({ streamId: utf8(c.m.tableId), seq: c.m.seq, prevTxid: c.m.prevTxid, imageKind: c.kind, changeImage: img, tag: t });
+    const rec = encodeRecord({ streamId: utf8(c.m.tableId), message: c.m, imageKind: c.kind, changeImage: img, tag: t });
     return {
       name: c.name,
       message: {

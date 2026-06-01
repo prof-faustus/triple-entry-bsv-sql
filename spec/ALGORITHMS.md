@@ -42,20 +42,27 @@ M(c) = MAGIC_M ‖ u8(VERSION) ‖ str(table_id) ‖ bytes(row_id)
 ### 1.2 The on-chain field record (`SYS-ENC-005`)
 
 The canonical layout placed as pushdata inside the spendable locking script (`SYS-ENC-001`; never
-OP_RETURN). This is what carries the tag + prev-reference on chain.
+OP_RETURN). It carries the **full change identity `M(c)`** plus the committed value and tag, so the
+record is **self-describing**: the database is reconstructable from the chain alone (`SYS-PG-004`,
+`SYS-HMAC-010`) and the hash chain is walkable via the `prev_txid` inside `M(c)` (`SYS-HMAC-008`).
 
 ```
-REC = MAGIC_R ‖ u8(VERSION) ‖ bytes(stream_id) ‖ u64(seq) ‖ bytes(prev_txid)
+REC = MAGIC_R ‖ u8(VERSION) ‖ bytes(stream_id) ‖ bytes(M_enc)
           ‖ u8(image_kind) ‖ bytes(change_image) ‖ bytes(tag)
 ```
 
 - `MAGIC_R` = ASCII `"TER1"` — Triple-Entry Record v1.
 - `stream_id`: the hash-chain/stream identifier (`SYS-HMAC-008`, `SYS-DECIDE-006`).
+- `M_enc` = `encode(M(c))` (§1.1) — carries `table_id, row_id, column_id, op, seq, prev_txid`. `M(c)`
+  carries no secret (`SYS-HMAC-001`), so embedding it on chain is sound and makes the record
+  self-describing for cold-rebuild. (`seq`/`prev_txid` live inside `M_enc`, not duplicated.)
 - `image_kind`: `0 = plaintext`, `1 = commitment` (see §4 / `SYS-HMAC-009`).
 - `change_image`: per §3.4.
 - `tag`: the 32-byte HMAC tag (§3.3).
 
-Round-trip (`encodeRecord`/`decodeRecord`) and rejection tests are mandatory.
+Round-trip (`encodeRecord`/`decodeRecord`, with `decodeMessage`) and rejection tests are mandatory.
+Cold-rebuild: parse `REC → M(c)`, recompute `GV→CS→K_hmac→tag'`, assert `tag' == tag` (integrity),
+apply `(table,row,column,op,value)` when plaintext, and verify `prev_txid` linkage.
 
 ---
 

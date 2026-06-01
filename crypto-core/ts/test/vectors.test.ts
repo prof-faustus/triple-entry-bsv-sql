@@ -67,7 +67,7 @@ test("core vectors reproduce byte-for-byte (encode/GV/subkeys/CS/Khmac/tag/commi
     assert.equal(bytesToHex(tag(k, img)), tc.expect.tag, `${tc.name} tag`);
     assert.equal(bytesToHex(commit(value, r)), tc.expect.commit, `${tc.name} commit`);
 
-    const rec = encodeRecord({ streamId: utf8(m.tableId), seq: m.seq, prevTxid: m.prevTxid, imageKind: kind, changeImage: img, tag: tag(k, img) });
+    const rec = encodeRecord({ streamId: utf8(m.tableId), message: m, imageKind: kind, changeImage: img, tag: tag(k, img) });
     assert.equal(bytesToHex(rec), tc.expect.encodedRecord, `${tc.name} encodedRecord`);
   }
 });

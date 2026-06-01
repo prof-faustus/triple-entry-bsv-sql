@@ -50,29 +50,59 @@ func EncodeMessage(m ChangeMessage) ([]byte, error) {
 		Finish(), nil
 }
 
+// DecodeMessage is the inverse of EncodeMessage (ALGORITHMS.md §1.1).
+func DecodeMessage(buf []byte) (ChangeMessage, error) {
+	var m ChangeMessage
+	rd := NewReader(buf)
+	magic := rd.Raw(4)
+	if rd.Err() == nil && string(magic) != string(MagicM) {
+		return m, errors.New("bad message magic")
+	}
+	if v := rd.U8(); rd.Err() == nil && v != Version {
+		return m, errors.New("unsupported message version")
+	}
+	m.TableID = rd.Str()
+	m.RowID = rd.Bytes()
+	m.ColumnID = rd.Str()
+	op := rd.U8()
+	if rd.Err() == nil && op != byte(OpInsert) && op != byte(OpUpdate) && op != byte(OpDelete) {
+		return m, errors.New("bad op")
+	}
+	m.Op = Op(op)
+	m.Seq = rd.U64()
+	m.PrevTxid = rd.Bytes()
+	if err := rd.End(); err != nil {
+		return m, err
+	}
+	if len(m.PrevTxid) != 0 && len(m.PrevTxid) != 32 {
+		return m, errors.New("prevTxid must be empty or 32 bytes")
+	}
+	return m, nil
+}
+
 // FieldRecord is the on-chain field record carried as spendable-script pushdata (ALGORITHMS.md §1.2).
+// It embeds the full change identity M(c) so the record is self-describing for cold-rebuild.
 type FieldRecord struct {
 	StreamID    []byte
-	Seq         uint64
-	PrevTxid    []byte
+	Message     ChangeMessage
 	ImageKind   ImageKind
 	ChangeImage []byte
 	Tag         []byte // 32 bytes
 }
 
 func EncodeRecord(r FieldRecord) ([]byte, error) {
-	if len(r.PrevTxid) != 0 && len(r.PrevTxid) != 32 {
-		return nil, errors.New("prevTxid must be empty or 32 bytes")
-	}
 	if len(r.Tag) != 32 {
 		return nil, errors.New("tag must be 32 bytes")
+	}
+	mEnc, err := EncodeMessage(r.Message)
+	if err != nil {
+		return nil, err
 	}
 	return NewWriter().
 		Raw(MagicR).
 		U8(Version).
 		Bytes(r.StreamID).
-		U64(r.Seq).
-		Bytes(r.PrevTxid).
+		Bytes(mEnc).
 		U8(byte(r.ImageKind)).
 		Bytes(r.ChangeImage).
 		Bytes(r.Tag).
@@ -90,8 +120,7 @@ func DecodeRecord(buf []byte) (FieldRecord, error) {
 		return rec, errors.New("unsupported record version")
 	}
 	rec.StreamID = rd.Bytes()
-	rec.Seq = rd.U64()
-	rec.PrevTxid = rd.Bytes()
+	mEnc := rd.Bytes()
 	kind := rd.U8()
 	if rd.Err() == nil && kind != byte(ImagePlaintext) && kind != byte(ImageCommitment) {
 		return rec, errors.New("bad image_kind")
@@ -105,5 +134,10 @@ func DecodeRecord(buf []byte) (FieldRecord, error) {
 	if len(rec.Tag) != 32 {
 		return rec, errors.New("tag must be 32 bytes")
 	}
+	m, err := DecodeMessage(mEnc)
+	if err != nil {
+		return rec, err
+	}
+	rec.Message = m
 	return rec, nil
 }

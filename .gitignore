@@ -6,9 +6,13 @@ dist/
 
 # Go
 /bin/
+bin/
 *.exe
 *.test
 *.out
+*.err
+*.log
+!**/REVIEWERS*.log
 
 # C / PostgreSQL fork build artefacts
 *.o

@@ -146,7 +146,7 @@ func TestCoreVectors(t *testing.T) {
 		eqHex(t, tc.Name+" tag", Tag(k, img), tc.Expect.Tag)
 		eqHex(t, tc.Name+" commit", Commit(value, r), tc.Expect.Commit)
 
-		rec, err := EncodeRecord(FieldRecord{StreamID: []byte(m.TableID), Seq: m.Seq, PrevTxid: m.PrevTxid, ImageKind: kind, ChangeImage: img, Tag: Tag(k, img)})
+		rec, err := EncodeRecord(FieldRecord{StreamID: []byte(m.TableID), Message: m, ImageKind: kind, ChangeImage: img, Tag: Tag(k, img)})
 		if err != nil {
 			t.Fatalf("%s: record: %v", tc.Name, err)
 		}

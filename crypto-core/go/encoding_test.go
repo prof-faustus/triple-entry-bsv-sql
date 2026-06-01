@@ -49,8 +49,7 @@ func TestReaderRejections(t *testing.T) {
 func TestRecordRoundTripAndRejections(t *testing.T) {
 	rec := FieldRecord{
 		StreamID:    []byte("ledger.invoices"),
-		Seq:         7,
-		PrevTxid:    bytes.Repeat([]byte{0xab}, 32),
+		Message:     ChangeMessage{TableID: "ledger.invoices", RowID: []byte{0x00, 0x01}, ColumnID: "amount", Op: OpUpdate, Seq: 7, PrevTxid: bytes.Repeat([]byte{0xab}, 32)},
 		ImageKind:   ImageCommitment,
 		ChangeImage: bytes.Repeat([]byte{0xcd}, 32),
 		Tag:         bytes.Repeat([]byte{0xef}, 32),
@@ -63,7 +62,7 @@ func TestRecordRoundTripAndRejections(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if dec.Seq != 7 || dec.ImageKind != ImageCommitment {
+	if dec.Message.Seq != 7 || dec.ImageKind != ImageCommitment || dec.Message.ColumnID != "amount" {
 		t.Fatal("decoded fields mismatch")
 	}
 	reenc, _ := EncodeRecord(dec)

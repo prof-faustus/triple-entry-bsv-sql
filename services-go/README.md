@@ -13,6 +13,20 @@ submission, chain/UTXO/asset queries, and the new-block/new-tx event/notificatio
 - **Relay** — consumes Teranode events; drives reorg re-evaluation and confirmation-depth gating
   (`SYS-PG-007`).
 
+## Packages & Phase-2 e2e
+- `node/` — minimal Teranode JSON-RPC client (`generate`/`generatetoaddress`, `getblock`,
+  `getrawtransaction`, `sendrawtransaction`, `getblockchaininfo`).
+- `bsvscript/` — spendable data-envelope builder + static no-P2SH/no-OP_RETURN check.
+- `cmd/fundprobe/` — verifies regtest funding (coinbase → controlled key).
+- `cmd/streame2e/` — the Phase-2 exit: fund → broadcast a hash-chained ECDH-HMAC stream in spendable
+  envelopes (`SIGHASH_ALL|FORKID`) → discover → cold-rebuild from chain + keys. **Passes on the live
+  Teranode regtest node** (Appendix B.2/B.5/B.6).
+
+Run the e2e (the node runs in WSL; run the Go there too to avoid a Windows-exe launch stall):
+```
+wsl -u root -- bash /mnt/d/claude/SQL/node-docker/lib/run-e2e-wsl.sh   # logs to services-go/bin/e2e-wsl.out
+```
+
 ## Note (`SYS-NODE-002`)
 Teranode is a microservices cluster, **not** a single `bitcoind`. The exact RPC methods, service
 endpoints, and event-topic names are taken from current Teranode docs at build time and pinned in
