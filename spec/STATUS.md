@@ -18,10 +18,10 @@ Updated: 2026-06-01. Legend: ✅ done · 🟡 partial/in-progress · ⛔ blocked
 | Assign every `[VERIFY]` | 🟡 | `VERIFY-LOG.md`: PG 18.4, Teranode quickstart/RPC/services/regtest-gen **RESOLVED**; Kafka topics, exact image tag, Chronicle-current **OPEN**; miner policy = POLICY (build-time survey). |
 | Pin node image | 🟡 | Release **v0.15.1 (2026-05-22)** identified; exact registry tag = `${TERANODE_VERSION}` placeholder, **OPEN** (B9). |
 | Pin PG version | ✅ | **PostgreSQL 18.4** (`VERIFY-LOG.md` A1). |
-| **Regtest comes up & produces blocks** (`SYS-NODE-001/003`, `SYS-CON-006`) | ⛔ | **Docker not installed in this environment** (`VERIFY-LOG.md` E2). `generate`/`generatetoaddress` confirmed available once the node runs (B5). |
+| **Regtest comes up & produces blocks** (`SYS-NODE-001/003`, `SYS-CON-006`) | ✅ | Docker Engine in WSL2 (E2 resolved); Teranode `v0.15.1` regtest **FSM RUNNING**, all core services healthy; `generate` mines blocks on demand; `getblock` retrieves them; `chain="regtest"`. Reproducible via `node-docker/regtest-up.sh`. |
 
-**Phase 0 is NOT fully exited:** the regtest bring-up cannot be confirmed without Docker, and two
-blockers (missing CTO spec E1; no C toolchain E3) gate downstream phases. See "Blockers" below.
+**Phase 0 is now fully exited** (regtest confirmed). Remaining caveats: C toolchain deferred (E3, by
+operator) and the CTO spec re-derived rather than supplied (E1). See "Blockers / deferrals".
 
 ### Phase 1 results (TS/Go; C deferred)
 | Deliverable (Appendix B.1) | Status | Evidence |
@@ -49,7 +49,8 @@ freeze/scaffold state — no functional code yet.
 | `SYS-INTEG-003` | 🟡 | Decisions recorded; open ones proposed, not silently assumed. |
 | `SYS-DECIDE-001/005/008/010` | ✅ | Locked, recorded. |
 | `SYS-DECIDE-002/003/004/006/007/009` | 🟡 | Proposed, pending confirmation. |
-| `SYS-NODE-001/002/003`, `SYS-CON-006` | ⛔ | Blocked on Docker (E2); interfaces pinned (B1–B6) ready to wire. |
+| `SYS-NODE-001/003`, `SYS-CON-006` | ✅ | Teranode regtest up in WSL Docker; blocks on demand; reproducible (`node-docker/`). |
+| `SYS-NODE-002` (RPC + events) | 🟡 | RPC verified (getblockchaininfo/generate/getblock); Kafka topics identified (B7); `services-go` wiring is Phase 2c. |
 | `SYS-ENC-005` (canonical encoding) | 🟡 | Encoder/decoder done in TS+Go (`crypto-core`); C side + on-chain script wiring later. |
 | `SYS-HMAC-002/003/004` (GV/subkeys/CS, K_hmac, tag) | 🟡 | Algorithms implemented + KAT-green in TS+Go; on-chain placement (`SYS-HMAC-005`), hash chain (`008`), discoverability (`006`) are Phase 2. |
 | `SYS-HMAC-009` (blinded commitment) | 🟡 | `commit` done TS+Go. |
