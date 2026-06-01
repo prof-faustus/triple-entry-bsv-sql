@@ -10,11 +10,13 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
 	"encoding/hex"
 	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	ec "github.com/bsv-blockchain/go-sdk/primitives/ec"
 	"github.com/bsv-blockchain/go-sdk/script"
@@ -107,6 +109,28 @@ func main() {
 	utxoTxid, utxoVout, utxoSats := walletFund(c, addr.AddressString, miner, myLockHex)
 	logf("funded from SV Node wallet %s:%d = %d sat", utxoTxid, utxoVout, utxoSats)
 
+	// which tables are confidential (SYS-HMAC-009: commitment on-chain, plaintext stays in DB)
+	confidential := map[string]bool{}
+	crows, err := db.Query(ctx, `SELECT table_name, confidential FROM te.journalled`)
+	ck(err)
+	for crows.Next() {
+		var t string
+		var cf bool
+		ck(crows.Scan(&t, &cf))
+		confidential[t] = cf
+	}
+	crows.Close()
+	streamConf := map[string]bool{}
+	srows, err := db.Query(ctx, `SELECT stream_id, bool_or(confidential) FROM te.journalled GROUP BY stream_id`)
+	ck(err)
+	for srows.Next() {
+		var s string
+		var cf bool
+		ck(srows.Scan(&s, &cf))
+		streamConf[s] = cf
+	}
+	srows.Close()
+
 	// drain the outbox in commit order
 	streamSeq := map[string]uint64{}
 	prevLink := map[string][]byte{}
@@ -141,9 +165,23 @@ func main() {
 		if r.value != nil {
 			val = *r.value
 		}
-		img := cc.ChangeImage(cc.ImagePlaintext, []byte(val), nil)
+		// confidential tables: on-chain change_image = commit(value, r); plaintext stays in DB (SYS-HMAC-009)
+		conf := confidential[r.table]
+		kind := cc.ImagePlaintext
+		var blind []byte
+		var img []byte
+		if conf {
+			blind = make([]byte, 32)
+			if _, err := rand.Read(blind); err != nil {
+				ck(err)
+			}
+			kind = cc.ImageCommitment
+			img = cc.ChangeImage(cc.ImageCommitment, []byte(val), blind)
+		} else {
+			img = cc.ChangeImage(cc.ImagePlaintext, []byte(val), nil)
+		}
 		tag := cc.Tag(kh, img)
-		rec, err := cc.EncodeRecord(cc.FieldRecord{StreamID: []byte(r.stream), Message: m, ImageKind: cc.ImagePlaintext, ChangeImage: img, Tag: tag})
+		rec, err := cc.EncodeRecord(cc.FieldRecord{StreamID: []byte(r.stream), Message: m, ImageKind: kind, ChangeImage: img, Tag: tag})
 		ck(err)
 		env, err := bsvscript.BuildEnvelopeIf(rec, pkh)
 		ck(err)
@@ -171,7 +209,21 @@ func main() {
 		                       ON CONFLICT (stream_id,seq) DO UPDATE SET txid=EXCLUDED.txid`, r.stream, int64(sseq), txidBytes)
 		ck(err)
 
-		logf("  %s seq %d  %s row=%s %s -> %q  txid=%s", r.stream, sseq, opName(r.op), string(r.rowID), r.column, val, txid)
+		if conf {
+			// store the blinding so the commitment can be opened/verified by entitled parties
+			_, err = db.Exec(ctx, `INSERT INTO te.blinding(stream_id, seq, r) VALUES($1,$2,$3)
+			                       ON CONFLICT (stream_id,seq) DO UPDATE SET r=EXCLUDED.r`, r.stream, int64(sseq), blind)
+			ck(err)
+			// confidentiality check: the plaintext value must NOT appear in the on-chain tx
+			rawHex, err := c.GetRawTransaction(txid)
+			ck(err)
+			if val != "" && strings.Contains(strings.ToLower(rawHex), hex.EncodeToString([]byte(val))) {
+				fail("confidential plaintext leaked on chain for " + r.table)
+			}
+			logf("  %s seq %d  %s row=%s %s -> [CONFIDENTIAL: commitment on-chain, plaintext off-chain] txid=%s", r.stream, sseq, opName(r.op), string(r.rowID), r.column, txid)
+		} else {
+			logf("  %s seq %d  %s row=%s %s -> %q  txid=%s", r.stream, sseq, opName(r.op), string(r.rowID), r.column, val, txid)
+		}
 		streamSeq[r.stream] = sseq + 1
 		prevLink[r.stream] = txidBytes
 		utxoTxid, utxoVout, utxoSats = txid, 1, change
@@ -186,6 +238,14 @@ func main() {
 			continue
 		}
 		ck(err)
+		if streamConf[stream] {
+			// confidential stream: plaintext is off-chain by design (SYS-HMAC-009). Verify each entry's
+			// tag over its on-chain COMMITMENT from keys alone; values stay in the DB (checked inline).
+			n, err := coldVerifyConfidential(c, hex.EncodeToString(headTxid), rel.writerPriv, rel.cpPub)
+			ck(err)
+			logf("  stream %s (confidential): %d commitment entries tag-verified from chain+keys; plaintext off-chain ✓", stream, n)
+			continue
+		}
 		rebuilt, n, err := coldRebuild(c, hex.EncodeToString(headTxid), rel.writerPriv, rel.cpPub)
 		ck(err)
 		logf("  stream %s: %d entries verified, %d cells rebuilt", stream, n, len(rebuilt))
@@ -324,6 +384,65 @@ func walletFund(c *node.Client, addrStr, miner, myLockHex string) (string, uint3
 	}
 	fail("funding tx has no output to our key")
 	return "", 0, 0
+}
+
+// coldVerifyConfidential walks a confidential stream from head via prev_txid and verifies each entry's
+// ECDH-HMAC tag over its on-chain COMMITMENT from keys alone (no plaintext is on chain). SYS-HMAC-009.
+func coldVerifyConfidential(c *node.Client, head string, wPriv, cPub []byte) (int, error) {
+	n := 0
+	txid := head
+	for txid != "" {
+		rawHex, err := c.GetRawTransaction(txid)
+		if err != nil {
+			return 0, err
+		}
+		tx, err := transaction.NewTransactionFromHex(rawHex)
+		if err != nil {
+			return 0, err
+		}
+		var data []byte
+		for _, o := range tx.Outputs {
+			if o.LockingScript == nil {
+				continue
+			}
+			if d, e := bsvscript.ExtractEnvelopeData(o.LockingScript); e == nil {
+				data = d
+				break
+			}
+		}
+		if data == nil {
+			return 0, fmt.Errorf("no envelope on %s", txid)
+		}
+		rec, err := cc.DecodeRecord(data)
+		if err != nil {
+			return 0, err
+		}
+		if rec.ImageKind != cc.ImageCommitment || len(rec.ChangeImage) != 32 {
+			return 0, fmt.Errorf("confidential entry %s is not a 32-byte commitment", txid)
+		}
+		_, gv, err := cc.GeneratorValue(rec.Message)
+		if err != nil {
+			return 0, err
+		}
+		cs, err := cc.CommonSecretAsWriter(wPriv, cPub, gv)
+		if err != nil {
+			return 0, err
+		}
+		kh, err := cc.DeriveHMACKey(cs, rec.Message)
+		if err != nil {
+			return 0, err
+		}
+		if hex.EncodeToString(cc.Tag(kh, rec.ChangeImage)) != hex.EncodeToString(rec.Tag) {
+			return 0, fmt.Errorf("confidential tag verify failed at %s", txid)
+		}
+		n++
+		if len(rec.Message.PrevTxid) == 0 {
+			txid = ""
+		} else {
+			txid = hex.EncodeToString(rec.Message.PrevTxid)
+		}
+	}
+	return n, nil
 }
 
 func plaintextValue(img []byte) (string, error) {
