@@ -1,0 +1,52 @@
+[
+  {
+    "type_id": "cash-usd",
+    "label": "US Dollar (issuer-backed)",
+    "unit": "USD",
+    "decimals": 2,
+    "supply": "mint-on-demand",
+    "backing": "issuer-backed",
+    "pegging_rate_micro": 5000000,
+    "min_sat_threshold": 546,
+    "confidential": false
+  },
+  {
+    "type_id": "bsv-tagged",
+    "label": "Satoshi-tagged value unit",
+    "unit": "sat",
+    "decimals": 0,
+    "supply": "fixed",
+    "backing": "satoshi-tagged",
+    "pegging_rate_micro": 1000000,
+    "min_sat_threshold": 1,
+    "confidential": false
+  },
+  {
+    "type_id": "cbdc-egbp",
+    "label": "Digital Pound (CBDC-linked, adapter contract only)",
+    "unit": "eGBP",
+    "decimals": 2,
+    "supply": "mint-on-demand",
+    "backing": "pegged",
+    "pegging_rate_micro": 7000000,
+    "min_sat_threshold": 546,
+    "confidential": false,
+    "external": {
+      "mode": "peg",
+      "adapter": "cbdc-egbp",
+      "oracle": "boe-rate-oracle",
+      "custodian": "boe-custodian"
+    }
+  },
+  {
+    "type_id": "goods-widget",
+    "label": "Widget consignment (goods token)",
+    "unit": "SKU-WIDGET",
+    "decimals": 0,
+    "supply": "fixed",
+    "backing": "issuer-backed",
+    "pegging_rate_micro": 1000000,
+    "min_sat_threshold": 1000,
+    "confidential": false
+  }
+]

@@ -2,12 +2,24 @@
 
 Updated: 2026-06-01. Legend: ✅ done · 🟡 partial/in-progress · ⛔ blocked · ⬜ not started.
 
-## Current phase: **Phase 3 — PostgreSQL fork ✅ COMPLETE (vertical slice)** — kickoff CHECKPOINT reached
+## Current phase: **Phase 4 — Definable token ✅ COMPLETE** (operator-confirmed past checkpoint)
 
-> Progress: Phase 0 ✅, Phase 1 ✅, Phase 2 ✅, **Phase 3 ✅** (vertical slice). The working
-> triple-entry core is done: ordinary SQL → ECDH-HMAC third entry in a spendable on-chain script →
-> hash-chained → cold-rebuildable from the chain alone, matching the live DB. This is the kickoff's
-> Phase-3 checkpoint. Phases 4–7 are gated behind operator go-ahead.
+> Progress: Phases 0–3 ✅, **Phase 4 ✅** (definable token: cash profiles, goods, atomic swap,
+> external-linkage adapter contract). Next: Phase 5 (EDI DFA + bridge + logistics).
+
+### Phase 4 result (2026-06-01) — PASS (Appendix B.7, on regtest)
+- `services-go/token` + `cmd/tokene2e`; defs in `tokenisation/token-defs.json`.
+- **`SYS-TOK-005`**: 4 token types defined from data, **no code change** (issuer-backed / satoshi-tagged
+  / pegged-CBDC / goods).
+- **`SYS-TOK-001/004`, `SYS-CASH-001/002`**: each token is a UTXO lineage carrying metadata + a
+  third-entry record in a spendable envelope; mint/transfer/redeem all journalled; lineages tag-verified.
+- **`SYS-TOK-003`**: satoshi binding `f(value, pegging_rate)` + min threshold.
+- **`SYS-TOK-006`**: external linkage via the **adapter contract only** (`RailAdapter` interface +
+  `MockAdapter`); real CBDC/stablecoin rail integration remains gated behind STOP-AND-ASK.
+- **`SYS-TOK-007`**: atomic two-token swap in ONE tx (deliver-vs-deliver), both legs verified.
+- All token scripts native (no P2SH/OP_RETURN). Reproduce: `tokenisation/run-token-e2e-wsl.sh`.
+
+### Phase 3 — PostgreSQL fork ✅ COMPLETE (vertical slice)
 
 ### Phase 3 result (2026-06-01) — PASS (PostgreSQL 18.4 + regtest, in WSL)
 - **PG 18.4** installed (PGDG) in WSL on :5433; `pg-fork` = PG18 + `te` schema + Go writer.
