@@ -19,6 +19,15 @@ Updated: 2026-06-01. Legend: ✅ done · 🟡 partial/in-progress · ⛔ blocked
   checks, never in a produced script; sighash `FORKID` enforced; confidentiality boundary stated.
 - Helpers: `node-docker/lib/reset-regtest.sh` (clean chain), `services-go/run-harden-e2e-wsl.sh`.
 
+### Post-build follow-ups (operator-directed "all")
+- **Repo pushed**: private GitHub `prof-faustus/triple-entry-bsv-sql` (master).
+- **Appendix B.1 closed**: `crypto-core/c` C core reproduces the shared vectors 40/40 byte-for-byte
+  (C ↔ TS ↔ Go); `make test` in WSL.
+- **Teratestnet**: prepared but **GATED** (STOP-AND-ASK) — `node-docker/teratestnet-up.sh` (config-only
+  unless `TERATESTNET_CONFIRM=1`) + `node-docker/TERATESTNET.md`. Going live needs operator go-ahead, a
+  **funded teratestnet key** (no regtest self-funding on a shared net), and a miner-policy survey. The
+  app layer is network-agnostic; only the funding source changes. Not executed.
+
 ### Appendix A/B coverage summary
 All 12 Appendix-B done-criteria demonstrated as vertical slices: B.1 (**C↔TS↔Go parity, fully closed**),
 B.2–B.6 (keystone, SQL surface, cold-rebuild, no-P2SH/OP_RETURN, sighash), B.7 (definable token + swap),
