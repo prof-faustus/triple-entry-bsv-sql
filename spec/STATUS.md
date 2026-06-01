@@ -35,6 +35,15 @@ spendable-envelope / no-OP_RETURN / no-P2SH / `SIGHASH_ALL|FORKID` design. Also 
 already running and is the intended funding source. The engines retain a Teranode `Fund()` path
 (coinbase) selectable by leaving `MinerAddr` unset.
 
+### LIVE BSV testnet — SPV/BURI proof layer validated (2026-06-01)
+`services-go/cmd/spvtestnet` (`run-spvtestnet-wsl.sh`) validates `SYS-PROOF-001..005` against the
+**public BSV testnet** via WhatsOnChain (read-only, no funds): fetched a real block (height 1,738,646,
+130 txs), **reproduced its transaction-Merkle root** from the live txids with our `spv` package (==
+the live header `merkleroot`), and **SPV-verified a real tx's inclusion + BURI** against the live
+header. The proof side works on real testnet, no funds. **Still fund-gated:** *broadcasting our own
+third-entry txs* on testnet/mainnet (needs a faucet-funded key); the engines fund from any node wallet,
+so that is one shot once a funded key exists.
+
 **CTO spec found:** `CTO_BSV_Build_Spec_v1.md` (the `SYS-SUB-001` dependency) **exists** at
 `D:\claude\cto\spec\source\` — it was NOT missing. `spec/CTO-PRIMITIVES.md` (re-derivation) reconciled
 against it; see `VERIFY-LOG.md` E1.
