@@ -20,6 +20,7 @@ BSV consensus**; on-chain presence is shown in `10_onchain-confirmations.txt`.
 | `11_confidential-path.txt` | `SYS-HMAC-009`: a confidential change recorded on-chain as a **blinded commitment** (32 bytes), **plaintext absent from the tx**, tag verifies over the commitment, commitment opens to (value, blinding); accepted by the SV Node. |
 | `12_sql-render-pdf.txt` | `SYS-DOC-005`: `te.render_pdf()` SQL function returns the field-set + on-chain anchor (txid for the BURI). |
 | `13_pdf-render-qr.txt` | `SYS-DOC-002/003/004`: deterministic PDF, embedded fields, **scannable QR of the BURI**, B/L non-negotiable marking. |
+| `14_pg-confidential-multistream.txt` | `SYS-HMAC-009` + `SYS-DECIDE-006`: two streams via the PG pipeline — plaintext `ledger.acct` (cold-rebuild == live DB) and **confidential `ledger.hr`** (commitment on-chain, **plaintext off-chain**, tag-verified from chain+keys). |
 
 Reproduce: `node-docker/regtest-up.sh` (Teranode), `pg-fork/install-pg18.sh` (PG18), and the
 `services-go/run-*-wsl.sh` / `pg-fork/run-pg-e2e-wsl.sh` runners. Spec/decisions/verify/security:

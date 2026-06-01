@@ -1,0 +1,23 @@
+>>> fresh schema + ordinary SQL (atomic capture)
+>>> pending changes in outbox: 6
+>>> run tewriter (broadcast + cold-rebuild)
+connected: PostgreSQL + SV Node regtest wallet
+funded from SV Node wallet 17c108f48947c7eff60517e5132ef4b6321da25c350ca8edf22d0284be05741f:0 = 2000000000 sat
+draining 6 pending changes
+  ledger.acct seq 0  INSERT row=1 balance -> "1000.00"  txid=9f7e0bf5e448baf0d27d96c48cfb48a4ddd310b2684d73cee07c17e57a91a257
+  ledger.acct seq 1  UPDATE row=1 balance -> "1500.00"  txid=6224e8d93358b1f7bb068d24bd1d9882cc039aaeddd81447a2682e8074b2d589
+  ledger.acct seq 2  INSERT row=2 balance -> "250.00"  txid=b3642b2cb6443cc260754263a8ee95c40b2900ec0454d9348afe4ae7998e6057
+  ledger.acct seq 3  UPDATE row=1 balance -> "1499.95"  txid=f876857da3b18b384f3e939b26a6c21ffa0dcc8411cc62b3e4cd2108d1fa4b50
+  ledger.hr seq 0  INSERT row=1 amount -> [CONFIDENTIAL: commitment on-chain, plaintext off-chain] txid=dcb83ba83c753bfc21898d57c9d9b79e579a7dfe242b6c0a7f0b4e39f887b373
+  ledger.hr seq 1  UPDATE row=1 amount -> [CONFIDENTIAL: commitment on-chain, plaintext off-chain] txid=377617edf42f9f96a21c77e5aaa1a16aca1c374ef9eee9a9c118edb561e24811
+== cold-rebuild from chain + keys, compare to live DB ==
+  stream ledger.acct: 4 entries verified, 2 cells rebuilt
+  stream ledger.acct: cold-rebuild == live DB ✓
+  stream ledger.hr (confidential): 2 commitment entries tag-verified from chain+keys; plaintext off-chain ✓
+RESULT: PHASE-3 E2E PASS — ordinary SQL -> verifiable on-chain third entries -> cold-rebuild == live DB
+>>> te.verify(public.accounts, row '1'):
+ column_id | op | stream_seq |                               txid                               | anchored 
+-----------+----+------------+------------------------------------------------------------------+----------
+ balance   |  2 |          3 | f876857da3b18b384f3e939b26a6c21ffa0dcc8411cc62b3e4cd2108d1fa4b50 | t
+(1 row)
+

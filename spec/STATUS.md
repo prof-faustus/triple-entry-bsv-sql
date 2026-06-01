@@ -57,7 +57,12 @@ against it; see `VERIFY-LOG.md` E1.
   `journal_table(...,confidential)`).
 - **SQL `te_render_pdf()`** (`SYS-DOC-005`): SQL function returns the field-set + on-chain anchors
   (txid → BURI) for a row; `docrender` turns it into the PDF. Verified end-to-end.
-Evidence: `evidence/11..13`.
+- **Confidential fields through the full PG pipeline + multi-stream** (`SYS-HMAC-009`, `SYS-DECIDE-006`):
+  `tewriter` journals a **confidential** table (`public.salaries`/`ledger.hr`) as on-chain **commitments
+  with plaintext off-chain** (blinding in `te.blinding`), alongside the plaintext `public.accounts`/
+  `ledger.acct` stream — both verified vs the SV Node (plaintext cold-rebuild == live DB; confidential
+  tag-verified, plaintext absent from chain).
+Evidence: `evidence/11..14`.
 
 ### Post-build follow-ups (operator-directed "all")
 - **Repo pushed**: private GitHub `prof-faustus/triple-entry-bsv-sql` (master).
