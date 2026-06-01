@@ -133,6 +133,28 @@ func (c *Client) GetRawTransaction(txid string) (string, error) {
 	return s, nil
 }
 
+// InvalidateBlock marks a block invalid, forcing a reorg away from it (regtest reorg tests).
+func (c *Client) InvalidateBlock(hash string) error {
+	_, err := c.Call("invalidateblock", hash)
+	return err
+}
+
+// ReconsiderBlock re-enables a previously invalidated block (restores the chain).
+func (c *Client) ReconsiderBlock(hash string) error {
+	_, err := c.Call("reconsiderblock", hash)
+	return err
+}
+
+// GetBestBlockHash returns the current tip hash.
+func (c *Client) GetBestBlockHash() (string, error) {
+	raw, err := c.Call("getbestblockhash")
+	if err != nil {
+		return "", err
+	}
+	var s string
+	return s, json.Unmarshal(raw, &s)
+}
+
 // SendRawTransaction broadcasts a raw tx hex and returns the txid.
 func (c *Client) SendRawTransaction(txHex string) (string, error) {
 	raw, err := c.Call("sendrawtransaction", txHex)

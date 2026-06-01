@@ -185,7 +185,12 @@ type Engine struct {
 	CpPub      []byte
 	Reg        Registry
 	wallet     utxo
+	lastBlock  string // hash of the block mined by the most recent send() (reliable tip ref)
 }
+
+// LastBlockHash returns the block hash mined by the most recent transition (generate-returned, so it
+// reflects the true tip even when getblockchaininfo/getbestblockhash lag on Teranode).
+func (e *Engine) LastBlockHash() string { return e.lastBlock }
 
 func (e *Engine) Fund() error {
 	hashes, err := e.C.GenerateToAddress(1, e.Wallet.addr())
@@ -343,7 +348,10 @@ func (e *Engine) send(tx *transaction.Transaction) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	_, err = e.C.Generate(1)
+	hashes, err := e.C.Generate(1)
+	if err == nil && len(hashes) > 0 {
+		e.lastBlock = hashes[len(hashes)-1]
+	}
 	return txid, err
 }
 

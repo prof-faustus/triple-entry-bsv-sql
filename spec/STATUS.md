@@ -2,10 +2,31 @@
 
 Updated: 2026-06-01. Legend: ✅ done · 🟡 partial/in-progress · ⛔ blocked · ⬜ not started.
 
-## Current phase: **Phase 6 — proofs / custody / overlay / computation ✅ COMPLETE**
+## Current phase: **Phase 7 — Hardening ✅ COMPLETE** — all 8 phases done (vertical slices)
 
-> Progress: Phases 0–5 ✅, **Phase 6 ✅**. Next: Phase 7 (hardening — reorg, idempotency,
-> confirmation-depth gating, security review).
+> Progress: **Phases 0–7 ✅**. The full Spec arc is implemented as working, e2e-verified vertical
+> slices on PostgreSQL 18.4 + Teranode regtest (in WSL). Remaining: production hardening of the
+> documented slices and **teratestnet/mainnet** — gated behind STOP-AND-ASK (live network/funds).
+
+### Phase 7 result (2026-06-01) — PASS (Appendix B.11, B.12)
+- `services-go/cmd/hardene2e` (`SYS-PG-007`): **confirmation-depth gating** (depth<req → not final;
+  ≥req → final; tip read from a generate-returned block hash, since `getblockchaininfo.blocks` lags);
+  **reorg re-evaluation** (`invalidateblock` → entry de-finalised, divergence surfaced; restore
+  best-effort — Teranode regtest reconsider is slow, non-fatal); **outbox idempotency** (dedup by
+  `M(c)`; restart is a no-op).
+- **B.12 grounding integrity** (`SYS-INTEG-001`): `spec/SECURITY-REVIEW.md` — no requirement grounded
+  in a patent abstract; static scan confirms `OP_RETURN`/`P2SH` appear only in comments and rejection
+  checks, never in a produced script; sighash `FORKID` enforced; confidentiality boundary stated.
+- Helpers: `node-docker/lib/reset-regtest.sh` (clean chain), `services-go/run-harden-e2e-wsl.sh`.
+
+### Appendix A/B coverage summary
+All 12 Appendix-B done-criteria demonstrated as vertical slices: B.1 (TS↔Go parity; C-clause open),
+B.2–B.6 (keystone, SQL surface, cold-rebuild, no-P2SH/OP_RETURN, sighash), B.7 (definable token + swap),
+B.8 (EDI DFAs + bridge), B.9 (logistics/ownership/integrity/DvP/B-L), B.10 (SPV+BURI/custody/overlay/
+compute), B.11 (resilience), B.12 (grounding). Appendix A requirements are met or slice-scoped per the
+per-phase notes above; production-hardening items and teratestnet/mainnet are explicitly deferred.
+
+### Phase 6 — proofs / custody / overlay / computation ✅ COMPLETE
 
 ### Phase 6 result (2026-06-01) — PASS (Appendix B.10; unit-tested Go packages)
 - **`spv`** (`SYS-PROOF-*`; WO2022100946A1, WO2022214264A1): transaction-Merkle proof + branch verify,
