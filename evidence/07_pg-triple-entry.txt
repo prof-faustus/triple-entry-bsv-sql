@@ -1,0 +1,24 @@
+>>> fresh schema + ordinary SQL (atomic capture)
+>>> pending changes in outbox: 4
+>>> run tewriter (broadcast + cold-rebuild)
+go: downloading github.com/jackc/pgx/v5 v5.9.2
+go: downloading github.com/jackc/pgpassfile v1.0.0
+go: downloading github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761
+go: downloading golang.org/x/text v0.37.0
+connected: PostgreSQL + Teranode regtest
+funded a39622cbf9c11228d3e4f96c07cb94fed2b3cd34b6f1927ab8be430ac137f1cc:0 = 5000000000 sat
+draining 4 pending changes
+  ledger.acct seq 0  INSERT row=1 balance -> "1000.00"  txid=98b900df0728bb951cda4b0ba4e6592066c0d772e37eec65448691b7b57be376
+  ledger.acct seq 1  UPDATE row=1 balance -> "1500.00"  txid=b1fd982d9371512538a5d3591e5a3b056d422a27e37193e9578e5a8e80cca541
+  ledger.acct seq 2  INSERT row=2 balance -> "250.00"  txid=feefdda3f6a827819b550cdaac29fb3d03d1ba8d4abfbd13f15dfb541ead386c
+  ledger.acct seq 3  UPDATE row=1 balance -> "1499.95"  txid=1a44e2bef2274cdee7dd334fa585c19f240c009f9b982c25ee53f2eef63f61af
+== cold-rebuild from chain + keys, compare to live DB ==
+  stream ledger.acct: 4 entries verified, 2 cells rebuilt
+  stream ledger.acct: cold-rebuild == live DB ✓
+RESULT: PHASE-3 E2E PASS — ordinary SQL -> verifiable on-chain third entries -> cold-rebuild == live DB
+>>> te.verify(public.accounts, row '1'):
+ column_id | op | stream_seq |                               txid                               | anchored 
+-----------+----+------------+------------------------------------------------------------------+----------
+ balance   |  2 |          3 | 1a44e2bef2274cdee7dd334fa585c19f240c009f9b982c25ee53f2eef63f61af | t
+(1 row)
+

@@ -1,0 +1,15 @@
+On-chain evidence — running funded SV Node (regtest, RPC 18443), captured 2026-06-01
+== node ==
+  "chain": "regtest",
+  "blocks": 344,
+  "bestblockhash": "6934445811f6cd423dc5e781edca92e52ddcdfa31442db4c1e02f613408ee3a1",
+  "chainwork": "00000000000000000000000000000000000000000000000000000000000002b2",
+== wallet balance (BSV) ==
+3534.99983478
+== Phase-4 token mint tx (confirmed) ==
+  "txid": "f4fafc2f5792b0ae9a9603a3823abc909d3673e8b095c984c74fb20b9d02f43f",
+      "txid": "8895cddeea635e419b832e2114f8c3daa5563bb1cac93c9c299012c6d21d521d",
+  "blockhash": "21bb4243b24ddb18aa305113c70d39ba94b8b0e73e3a96e3aeb582fb36e67350",
+== Phase-3 PostgreSQL third-entry tx (confirmed) ==
+  "txid": "df217cd62cc516e790bbf0f1e5af32523ac57cee3b0b191bd8f4fd4e714a13ac",
+      "txid": "ea7ce5927196a49b542f4d00ffcf5b3a7d9a2eb531097afce693afdbfcda399b",

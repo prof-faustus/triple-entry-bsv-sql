@@ -1,0 +1,18 @@
+== token types defined from data (no code change) ==
+  cash-usd      unit=USD         backing=issuer-backed external=none
+  bsv-tagged    unit=sat         backing=satoshi-tagged external=none
+  cbdc-egbp     unit=eGBP        backing=pegged        external=peg:cbdc-egbp
+  goods-widget  unit=SKU-WIDGET  backing=issuer-backed external=none
+funded wallet from matured coinbase
+== cash-usd: mint -> transfer -> redeem ==
+  mint  $1500.00 to issuer   txid=b26326d01e7d20dcc3938d671935ab23cfa04d1501c6b3a16530cef05c5b9103 sats=750000
+  xfer  -> holderA           txid=e793af04f99dfe59d8d5ce6e782b09f62270ccf7d4e6c6b1337eb68cc9029b07
+  redeem (burn) -> issuer    txid=1ac7818d1de8c080a0be1c3a756790eed6feb3406df63ffaa62ef06c71624eec
+  verified: 3 events, burned, final controller=issuer ✓
+== cbdc-egbp: adapter contract (no real rail) ==
+  oracle=boe-rate-oracle rate_micro=7000000  custodian=boe-custodian  lock_ref=mock:cbdc-egbp:EGBP#1 (MOCK — real rail gated by STOP-AND-ASK)
+  minted+transferred; verified 2 events, controller=holderB ✓
+== atomic swap: bsv-tagged (holderA) <-> goods-widget (holderB) ==
+  swapped in ONE tx 4555f71c8b75fc768c0dd5268194723bc93934e4bef89e6ce3f472b465191964 (atomic)
+  verified: SAT now holderB, WIDGET now holderA ✓
+RESULT: PHASE-4 E2E PASS — definable token (no-code-change types), cash/CBDC-adapter/goods mint·transfer·redeem journalled, atomic swap, native (no P2SH/OP_RETURN)

@@ -1,0 +1,58 @@
+##### PHASE 4: TOKEN #####
+== token types defined from data (no code change) ==
+  cash-usd      unit=USD         backing=issuer-backed external=none
+  bsv-tagged    unit=sat         backing=satoshi-tagged external=none
+  cbdc-egbp     unit=eGBP        backing=pegged        external=peg:cbdc-egbp
+  goods-widget  unit=SKU-WIDGET  backing=issuer-backed external=none
+funded fee key from SV Node wallet (sendtoaddress)
+== cash-usd: mint -> transfer -> redeem ==
+  mint  $1500.00 to issuer   txid=f4fafc2f5792b0ae9a9603a3823abc909d3673e8b095c984c74fb20b9d02f43f sats=750000
+  xfer  -> holderA           txid=5e33db25ba517e30b2da5891e0aa6c46c7811f395d1109cb2df7f7311e1379ee
+  redeem (burn) -> issuer    txid=0ac9cbce9ec72ecba7bd7720ef641e5590853edb648e8a5eecfef5eb397bdc04
+  verified: 3 events, burned, final controller=issuer ✓
+== cbdc-egbp: adapter contract (no real rail) ==
+  oracle=boe-rate-oracle rate_micro=7000000  custodian=boe-custodian  lock_ref=mock:cbdc-egbp:EGBP#1 (MOCK — real rail gated by STOP-AND-ASK)
+  minted+transferred; verified 2 events, controller=holderB ✓
+== atomic swap: bsv-tagged (holderA) <-> goods-widget (holderB) ==
+  swapped in ONE tx 45de151fff8f7446c7dcdfa18e10670ab8066aa1c1c1ba92aa154330651db7d4 (atomic)
+  verified: SAT now holderB, WIDGET now holderA ✓
+RESULT: PHASE-4 E2E PASS — definable token (no-code-change types), cash/CBDC-adapter/goods mint·transfer·redeem journalled, atomic swap, native (no P2SH/OP_RETURN)
+token rc=0
+##### PHASE 5: EDI + LOGISTICS #####
+== B.8: running every SYS-EDI-002 document DFA on-chain ==
+  22 document DFAs each driven to a final state and tag-verified ✓
+== cross-referenced trade documents ==
+  PO#1 -> INV#1(refs PO#1) -> PAY#1(refs INV#1); reference graph verified from chain ✓
+== B.9: consignment lifecycle, custody, ownership, integrity ==
+  ownership key-match ✓ (and mismatch rejected); integrity hash-match ✓ (and tamper detected)
+  delivery-versus-payment: CON#1 ACCEPTED + POD#1 SIGNED -> PAY#1 SETTLED, CON#1 SETTLED ✓
+== bill-of-lading as the token (title transfer) ==
+  B/L issued(shipper) -> endorsed(consignee) -> surrendered; title transfer verified on chain ✓
+RESULT: PHASE-5 E2E PASS — 22 document DFAs, cross-refs, consignment+custody, ownership(US11210372)+integrity(GB2558485A), DvP, B/L-as-token
+edi rc=0
+##### PHASE 3: POSTGRESQL TRIPLE-ENTRY #####
+connected: PostgreSQL + SV Node regtest wallet
+funded from SV Node wallet ea7ce5927196a49b542f4d00ffcf5b3a7d9a2eb531097afce693afdbfcda399b:0 = 2000000000 sat
+draining 4 pending changes
+  ledger.acct seq 0  INSERT row=1 balance -> "1000.00"  txid=df217cd62cc516e790bbf0f1e5af32523ac57cee3b0b191bd8f4fd4e714a13ac
+  ledger.acct seq 1  UPDATE row=1 balance -> "1500.00"  txid=6c35d8b7762d6a2e80589aebffbf983e5ebdd54a9c96238a59a5525fb2e6fb00
+  ledger.acct seq 2  INSERT row=2 balance -> "250.00"  txid=ca8311c87896f2cffc1ec64d99e0e703902f2053447ccda94762c8aa989b3e48
+  ledger.acct seq 3  UPDATE row=1 balance -> "1499.95"  txid=cc34abaa8e03e868bf865eac7e874b2d24762c6328a8c6dda99682f039c46bd1
+== cold-rebuild from chain + keys, compare to live DB ==
+  stream ledger.acct: 4 entries verified, 2 cells rebuilt
+  stream ledger.acct: cold-rebuild == live DB ✓
+RESULT: PHASE-3 E2E PASS — ordinary SQL -> verifiable on-chain third entries -> cold-rebuild == live DB
+pg rc=0
+##### PHASE 7: HARDENING #####
+== entry anchored: txid=6429e20625d111db94de2efccc3ef056c5ca33760fb94898099184f41150d994 at height 342 (block 7f06c51d740b5983) ==
+== confirmation-depth gating (required depth 3) ==
+  depth=1 -> not final (read gated) ✓
+  depth=3 -> final (read released) ✓
+== reorg re-evaluation ==
+  invalidateblock -> block at height 342 is no longer the entry block: divergence detected, entry de-finalised ✓
+  reconsiderblock -> entry re-confirmed; re-evaluation complete ✓
+== outbox idempotency (dedup by M(c)) ==
+  M(c) dedup: first records, restart is a no-op ✓
+RESULT: PHASE-7 HARDENING PASS — confirmation-depth gating, reorg re-evaluation, idempotency (SYS-PG-007)
+harden rc=0
+##### ALL DONE #####

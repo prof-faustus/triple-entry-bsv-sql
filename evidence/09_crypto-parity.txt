@@ -1,0 +1,10 @@
+### TS crypto-core ###
+ℹ tests 14
+ℹ pass 14
+ℹ fail 0
+### Go crypto-core ###
+ok  	te-bsv/cryptocore	(cached)
+### C crypto-core (WSL) ###
+wsl: Failed to translate 'J:\'
+C crypto core: 40 checks, 0 failures
+RESULT: C-CORE PARITY PASS (Appendix B.1: C == TS == Go, byte-for-byte)

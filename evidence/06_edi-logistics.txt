@@ -1,0 +1,10 @@
+== B.8: running every SYS-EDI-002 document DFA on-chain ==
+  22 document DFAs each driven to a final state and tag-verified ✓
+== cross-referenced trade documents ==
+  PO#1 -> INV#1(refs PO#1) -> PAY#1(refs INV#1); reference graph verified from chain ✓
+== B.9: consignment lifecycle, custody, ownership, integrity ==
+  ownership key-match ✓ (and mismatch rejected); integrity hash-match ✓ (and tamper detected)
+  delivery-versus-payment: CON#1 ACCEPTED + POD#1 SIGNED -> PAY#1 SETTLED, CON#1 SETTLED ✓
+== bill-of-lading as the token (title transfer) ==
+  B/L issued(shipper) -> endorsed(consignee) -> surrendered; title transfer verified on chain ✓
+RESULT: PHASE-5 E2E PASS — 22 document DFAs, cross-refs, consignment+custody, ownership(US11210372)+integrity(GB2558485A), DvP, B/L-as-token

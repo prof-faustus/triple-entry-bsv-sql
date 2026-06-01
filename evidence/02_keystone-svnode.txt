@@ -1,0 +1,10 @@
+== funding from SV Node wallet (sendtoaddress) ==
+funded from wallet: aa3739a5c5c5ccbb19351e3e7f6badd7e9ad21f5f551732066e8b1466b399e02:0 = 1000000000 sat
+== broadcasting hash-chained ECDH-HMAC stream to SV Node ==
+  seq 0  INSERT row= -> "1000.00"  txid=d7c5298632d2b9f553519dfed45d0d2e30f46d3687f476338af26bf98c2c7e05 (accepted by SV Node)
+  seq 1  UPDATE row= -> "1500.00"  txid=7e3e53213415220d5e86857497caecc0c5292a44a5e66312074e0ec5455cd6a8 (accepted by SV Node)
+  seq 2  INSERT row= -> "250.00"  txid=43d4cb59a3e58175d0c84a3063b568d043f2c53873fbfcd0beb5d98a47b56d1c (accepted by SV Node)
+  seq 3  UPDATE row= -> "1499.95"  txid=0f799e5a7fabfba2a626e57953d61244051ca0425835e3a10a75c7d2f4500909 (accepted by SV Node)
+== cold-rebuild from SV Node chain + keys ==
+cold-rebuild OK: 2 cells across 4 chained entries == source
+RESULT: SV-NODE WALLET E2E PASS — funded from running wallet, 4 third entries accepted by SV Node, cold-rebuild verified

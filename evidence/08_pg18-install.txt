@@ -1,0 +1,12 @@
+>>> base deps
+>>> add PGDG repo
+>>> install postgresql-18
+>>> configure cluster on port 5433
+>>> psql version
+PostgreSQL 18.4 (Ubuntu 18.4-1.pgdg24.04+1) on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0, 64-bit
+>>> create role+db te
+CREATE ROLE
+CREATE DATABASE
+>>> connect as te
+te-connect-ok|PostgreSQL 18.4 (Ubuntu 18.4-1.pgdg24.04+1) on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0, 64-bit
+PG18 READY
