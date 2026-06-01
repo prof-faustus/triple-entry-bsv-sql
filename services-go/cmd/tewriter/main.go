@@ -64,9 +64,9 @@ func cellKey(tab string, row []byte, col string) string {
 }
 
 func main() {
-	rpcURL := flag.String("rpc", "http://localhost:9292", "Teranode RPC URL")
-	rpcUser := flag.String("user", "teranode", "RPC user")
-	rpcPass := flag.String("pass", "regtestsecret", "RPC pass")
+	rpcURL := flag.String("rpc", "http://127.0.0.1:18443", "RPC URL (SV Node wallet)")
+	rpcUser := flag.String("user", "cto", "RPC user")
+	rpcPass := flag.String("pass", "ctopass", "RPC pass")
 	pg := flag.String("pg", "postgres://te:te@127.0.0.1:5433/te", "PostgreSQL DSN")
 	logPath := flag.String("log", filepath.Join(os.TempDir(), "te_writer.log"), "log path")
 	flag.Parse()
@@ -80,7 +80,7 @@ func main() {
 	db, err := pgx.Connect(ctx, *pg)
 	ck(err)
 	defer db.Close(ctx)
-	logf("connected: PostgreSQL + Teranode regtest")
+	logf("connected: PostgreSQL + SV Node regtest wallet")
 
 	// load relationships (keys per stream)
 	rels := map[string]relationship{}
@@ -102,8 +102,10 @@ func main() {
 	ck(err)
 	myLockHex := hex.EncodeToString(myLock.Bytes())
 	pkh := []byte(addr.PublicKeyHash)
-	utxoTxid, utxoVout, utxoSats := fund(c, addr.AddressString, myLock)
-	logf("funded %s:%d = %d sat", utxoTxid, utxoVout, utxoSats)
+	miner, err := c.GetNewAddress()
+	ck(err)
+	utxoTxid, utxoVout, utxoSats := walletFund(c, addr.AddressString, miner, myLockHex)
+	logf("funded from SV Node wallet %s:%d = %d sat", utxoTxid, utxoVout, utxoSats)
 
 	// drain the outbox in commit order
 	streamSeq := map[string]uint64{}
@@ -159,7 +161,7 @@ func main() {
 		ck(tx.Sign())
 		txid, err := c.SendRawTransaction(tx.Hex())
 		ck(err)
-		_, err = c.Generate(1)
+		_, err = c.GenerateToAddress(1, miner)
 		ck(err)
 
 		txidBytes := mustHex(txid)
@@ -306,23 +308,21 @@ func coldRebuild(c *node.Client, headTxid string, wPriv, cPub []byte) (map[strin
 }
 
 // fund mines a coinbase to addr, matures it, and returns the spendable (txid,vout,sats).
-func fund(c *node.Client, addrStr string, myLock *script.Script) (string, uint32, uint64) {
-	hashes, err := c.GenerateToAddress(1, addrStr)
+// walletFund funds addrStr from the SV Node wallet (sendtoaddress), mines to confirm, and locates the
+// funding UTXO by matching myLockHex (SYS-PG-003 funding from a real wallet, not a regtest coinbase).
+func walletFund(c *node.Client, addrStr, miner, myLockHex string) (string, uint32, uint64) {
+	txid, err := c.SendToAddress(addrStr, 20.0)
 	ck(err)
-	blk, err := c.GetBlock(hashes[0])
+	_, err = c.GenerateToAddress(1, miner)
 	ck(err)
-	_, err = c.Generate(100)
+	vouts, err := c.GetRawTxVerbose(txid)
 	ck(err)
-	cbHex, err := c.GetRawTransaction(blk.MerkleRoot)
-	ck(err)
-	cb, err := transaction.NewTransactionFromHex(cbHex)
-	ck(err)
-	for i, o := range cb.Outputs {
-		if o.LockingScript != nil && o.LockingScript.Equals(myLock) {
-			return blk.MerkleRoot, uint32(i), o.Satoshis
+	for _, o := range vouts {
+		if o.ScriptPubKey.Hex == myLockHex {
+			return txid, uint32(o.N), uint64(o.Value*1e8 + 0.5)
 		}
 	}
-	fail("no coinbase output pays our key")
+	fail("funding tx has no output to our key")
 	return "", 0, 0
 }
 

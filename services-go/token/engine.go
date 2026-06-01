@@ -67,7 +67,42 @@ type Engine struct {
 	Wallet     *Keypair
 	WriterPriv []byte // journalling writer master key
 	CpPub      []byte // counterparty/auditor pubkey
+	MinerAddr  string // if set, mine via generatetoaddress(MinerAddr) (SV Node); else Generate (Teranode)
 	wallet     utxo   // current fee UTXO
+}
+
+// mine confirms a tx: generatetoaddress on a wallet node (SV Node), else generate (Teranode regtest).
+func (e *Engine) mine() error {
+	if e.MinerAddr != "" {
+		_, err := e.C.GenerateToAddress(1, e.MinerAddr)
+		return err
+	}
+	_, err := e.C.Generate(1)
+	return err
+}
+
+// FundFromWallet funds the fee key from a node wallet (SV Node) via sendtoaddress (SYS-CASH funding
+// from a real wallet, not a regtest coinbase).
+func (e *Engine) FundFromWallet(amountBSV float64) error {
+	txid, err := e.C.SendToAddress(e.walletAddr(), amountBSV)
+	if err != nil {
+		return err
+	}
+	if err := e.mine(); err != nil {
+		return err
+	}
+	vouts, err := e.C.GetRawTxVerbose(txid)
+	if err != nil {
+		return err
+	}
+	want := hex.EncodeToString(e.Wallet.Lock.Bytes())
+	for _, o := range vouts {
+		if o.ScriptPubKey.Hex == want {
+			e.wallet = utxo{txid, uint32(o.N), uint64(o.Value*1e8 + 0.5)}
+			return nil
+		}
+	}
+	return fmt.Errorf("funding tx %s has no output to the wallet key", txid)
 }
 
 func stream(typeID string) string { return "token." + typeID }
@@ -153,7 +188,7 @@ func (e *Engine) broadcast(tx *transaction.Transaction) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if _, err := e.C.Generate(1); err != nil {
+	if err := e.mine(); err != nil {
 		return "", err
 	}
 	return txid, nil

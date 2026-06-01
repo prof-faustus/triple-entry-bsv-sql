@@ -49,9 +49,9 @@ func expect(c bool, what string) {
 func mustHex(s string) []byte { b, _ := hex.DecodeString(s); return b }
 
 func main() {
-	rpc := flag.String("rpc", "http://localhost:9292", "RPC URL")
-	user := flag.String("user", "teranode", "RPC user")
-	pass := flag.String("pass", "regtestsecret", "RPC pass")
+	rpc := flag.String("rpc", "http://127.0.0.1:18443", "RPC URL (SV Node wallet)")
+	user := flag.String("user", "cto", "RPC user")
+	pass := flag.String("pass", "ctopass", "RPC pass")
 	defs := flag.String("defs", "/mnt/d/claude/SQL/edi-dfa/document-defs.json", "DFA defs")
 	logp := flag.String("log", filepath.Join(os.TempDir(), "te_harden.log"), "log path")
 	flag.Parse()
@@ -62,10 +62,11 @@ func main() {
 	c := node.New(*rpc, *user, *pass)
 	reg := must(edi.LoadRegistry(*defs))
 	e := &edi.Engine{C: c, Wallet: must(edi.NewKeypair(walletPriv)), WriterPriv: mustHex(writerPriv), CpPub: cc.PubFromPriv(mustHex(cpPriv)), Reg: reg}
-	ck(e.Fund())
+	e.MinerAddr = must(c.GetNewAddress())
+	ck(e.FundFromWallet(20.0))
 	party := must(edi.NewKeypair(partyK))
 
-	// blockHeight reads a generate-returned block hash's height (reliable on Teranode).
+	// blockHeight reads a generate-returned block hash's height (reliable).
 	blockHeight := func(hash string) int { return must(c.GetBlock(hash)).Height }
 
 	// originate an entry; the engine's broadcast mines a block containing it.

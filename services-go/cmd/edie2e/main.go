@@ -61,9 +61,9 @@ var mandated = []string{
 }
 
 func main() {
-	rpc := flag.String("rpc", "http://localhost:9292", "RPC URL")
-	user := flag.String("user", "teranode", "RPC user")
-	pass := flag.String("pass", "regtestsecret", "RPC pass")
+	rpc := flag.String("rpc", "http://127.0.0.1:18443", "RPC URL (SV Node wallet)")
+	user := flag.String("user", "cto", "RPC user")
+	pass := flag.String("pass", "ctopass", "RPC pass")
 	defs := flag.String("defs", "/mnt/d/claude/SQL/edi-dfa/document-defs.json", "DFA defs")
 	logp := flag.String("log", filepath.Join(os.TempDir(), "te_edi.log"), "log path")
 	flag.Parse()
@@ -79,7 +79,8 @@ func main() {
 	consignee := must(edi.NewKeypair(consigneeK))
 	seller := must(edi.NewKeypair(sellerK))
 	e := &edi.Engine{C: node.New(*rpc, *user, *pass), Wallet: wallet, WriterPriv: mustHex(writerPriv), CpPub: cc.PubFromPriv(mustHex(cpPriv)), Reg: reg}
-	ck(e.Fund())
+	e.MinerAddr = must(e.C.GetNewAddress())
+	ck(e.FundFromWallet(20.0))
 
 	// ---- B.8: every mandated document type runs its DFA lifecycle on-chain ----
 	logf("== B.8: running every SYS-EDI-002 document DFA on-chain ==")

@@ -19,14 +19,21 @@ Updated: 2026-06-01. Legend: ✅ done · 🟡 partial/in-progress · ⛔ blocked
   checks, never in a produced script; sighash `FORKID` enforced; confidentiality boundary stated.
 - Helpers: `node-docker/lib/reset-regtest.sh` (clean chain), `services-go/run-harden-e2e-wsl.sh`.
 
-### Validation against the running SV Node wallet (operator correction, 2026-06-01)
-A funded **SV Node `bitcoind` regtest wallet** is running (RPC `:18443`, ~600 BSV spendable). The
-keystone e2e was re-run **funded from that wallet and broadcast to that real full-consensus node**
-(`services-go/cmd/svnodee2e`, `run-svnode-e2e-wsl.sh`): `sendtoaddress` → 4 hash-chained ECDH-HMAC
-third entries (spendable envelopes, no OP_RETURN/P2SH, `SIGHASH_ALL|FORKID`) **accepted by the SV
-Node**, cold-rebuild == source. Stronger than the Teranode raw-tx path (real consensus script
-validation); corrects the earlier "operator must supply funds" framing — the funded test wallet was
-already running and is the intended funding source.
+### FULL STACK validated against the running SV Node wallet (2026-06-01)
+A funded **SV Node `bitcoind` regtest wallet** is running (RPC `:18443`, ~600 BSV). The engines were
+wired to **fund from that wallet** (`FundFromWallet` → `sendtoaddress` + `getrawtransaction` verbose;
+`generatetoaddress` mining) and **all phases re-run against that real full-consensus node**
+(`run-all-svnode-wsl.sh`, all rc=0):
+- **P4 token**: cash/CBDC-adapter/goods mint·transfer·redeem + atomic swap — accepted, journalled, verified.
+- **P5 EDI/logistics**: 22 document DFAs, cross-refs, consignment/custody, ownership+integrity, DvP, B/L-as-token.
+- **P3 PG triple-entry**: ordinary SQL → 4 third entries accepted by the SV Node; cold-rebuild == live DB.
+- **P7 hardening**: confirmation-depth gating, **reorg with full `reconsiderblock` restore** (clean on SV
+  Node, unlike Teranode's slow reconsider), outbox idempotency.
+Every tx was **accepted by the SV Node under full BSV consensus** — real script validation of the
+spendable-envelope / no-OP_RETURN / no-P2SH / `SIGHASH_ALL|FORKID` design. Also the keystone stream
+(`svnodee2e`). This corrects the earlier "operator must supply funds" framing — the funded wallet was
+already running and is the intended funding source. The engines retain a Teranode `Fund()` path
+(coinbase) selectable by leaving `MinerAddr` unset.
 
 **CTO spec found:** `CTO_BSV_Build_Spec_v1.md` (the `SYS-SUB-001` dependency) **exists** at
 `D:\claude\cto\spec\source\` — it was NOT missing. `spec/CTO-PRIMITIVES.md` (re-derivation) reconciled

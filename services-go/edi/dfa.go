@@ -184,6 +184,7 @@ type Engine struct {
 	WriterPriv []byte
 	CpPub      []byte
 	Reg        Registry
+	MinerAddr  string // if set, mine via generatetoaddress (SV Node); else generate (Teranode)
 	wallet     utxo
 	lastBlock  string // hash of the block mined by the most recent send() (reliable tip ref)
 }
@@ -191,6 +192,45 @@ type Engine struct {
 // LastBlockHash returns the block hash mined by the most recent transition (generate-returned, so it
 // reflects the true tip even when getblockchaininfo/getbestblockhash lag on Teranode).
 func (e *Engine) LastBlockHash() string { return e.lastBlock }
+
+// mine confirms a tx and records the mined block hash. generatetoaddress on a wallet node (SV Node),
+// else generate (Teranode regtest).
+func (e *Engine) mine() error {
+	var hashes []string
+	var err error
+	if e.MinerAddr != "" {
+		hashes, err = e.C.GenerateToAddress(1, e.MinerAddr)
+	} else {
+		hashes, err = e.C.Generate(1)
+	}
+	if err == nil && len(hashes) > 0 {
+		e.lastBlock = hashes[len(hashes)-1]
+	}
+	return err
+}
+
+// FundFromWallet funds the fee key from a node wallet (SV Node) via sendtoaddress.
+func (e *Engine) FundFromWallet(amountBSV float64) error {
+	txid, err := e.C.SendToAddress(e.Wallet.addr(), amountBSV)
+	if err != nil {
+		return err
+	}
+	if err := e.mine(); err != nil {
+		return err
+	}
+	vouts, err := e.C.GetRawTxVerbose(txid)
+	if err != nil {
+		return err
+	}
+	want := hex.EncodeToString(e.Wallet.Lock.Bytes())
+	for _, o := range vouts {
+		if o.ScriptPubKey.Hex == want {
+			e.wallet = utxo{txid, uint32(o.N), uint64(o.Value*1e8 + 0.5)}
+			return nil
+		}
+	}
+	return fmt.Errorf("funding tx %s has no output to the wallet key", txid)
+}
 
 func (e *Engine) Fund() error {
 	hashes, err := e.C.GenerateToAddress(1, e.Wallet.addr())
@@ -348,11 +388,7 @@ func (e *Engine) send(tx *transaction.Transaction) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	hashes, err := e.C.Generate(1)
-	if err == nil && len(hashes) > 0 {
-		e.lastBlock = hashes[len(hashes)-1]
-	}
-	return txid, err
+	return txid, e.mine()
 }
 
 // History is the cold-rebuilt, tag-verified state sequence of a document lineage.

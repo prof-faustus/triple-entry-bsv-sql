@@ -45,9 +45,9 @@ func ck(err error) {
 func must[T any](v T, err error) T { ck(err); return v }
 
 func main() {
-	rpc := flag.String("rpc", "http://localhost:9292", "RPC URL")
-	user := flag.String("user", "teranode", "RPC user")
-	pass := flag.String("pass", "regtestsecret", "RPC pass")
+	rpc := flag.String("rpc", "http://127.0.0.1:18443", "RPC URL (SV Node wallet)")
+	user := flag.String("user", "cto", "RPC user")
+	pass := flag.String("pass", "ctopass", "RPC pass")
 	defs := flag.String("defs", "/mnt/d/claude/SQL/tokenisation/token-defs.json", "token definitions")
 	logp := flag.String("log", filepath.Join(os.TempDir(), "te_token.log"), "log path")
 	flag.Parse()
@@ -73,8 +73,9 @@ func main() {
 	cpPub := cc.PubFromPriv(mustHex(cpPriv))
 
 	e := &token.Engine{C: node.New(*rpc, *user, *pass), Wallet: wallet, WriterPriv: mustHex(writerPriv), CpPub: cpPub}
-	ck(e.Fund())
-	logf("funded wallet from matured coinbase")
+	e.MinerAddr = must(e.C.GetNewAddress())
+	ck(e.FundFromWallet(20.0))
+	logf("funded fee key from SV Node wallet (sendtoaddress)")
 
 	// ---- cash (issuer-backed): mint -> transfer -> redeem ----
 	usdDef := must(reg.Get("cash-usd"))
