@@ -21,6 +21,19 @@ KAT vectors green and **byte-identical** across the C fork and the TS/Go compone
 ## Layout
 - `vectors/` — shared known-answer test vectors (the single source of truth for cross-impl parity).
 
+## Implementations & how to run
+- `ts/` — TypeScript (Node built-in `crypto` for SHA-256/HMAC/HKDF/AES-GCM; `@noble/curves` for secp256k1).
+  `cd ts && NODE_OPTIONS=--use-system-ca npm install && npm test` (the env var trusts the Windows cert
+  store — see `VERIFY-LOG.md` E5). `npm run gen-vectors` regenerates the shared vectors (TS is the source
+  of truth).
+- `go/` — Go (`crypto/*` std lib; `decred/dcrd/dcrec/secp256k1/v4`; `x/crypto/hkdf`).
+  `cd go && go test ./...` — consumes the same `vectors/*.json` and must match byte-for-byte.
+- `vectors/` — `core_vectors.json` (composite KAT, TS-generated) + `rfc_vectors.json` (RFC-4231 / RFC-5869
+  / NIST standard KATs validating the primitive wiring independently in every impl).
+
+**Status (Phase 1):** TS and Go pass and agree byte-for-byte (`SYS-TEST-003`). The **C** binding is
+deferred (no toolchain yet, `VERIFY-LOG.md` E3), so Appendix B.1's C-parity clause stays open.
+
 ## Dependency / status
 `SYS-SUB-001` grounds the confidential primitives on the **CTO substrate**
 (`CTO_BSV_Build_Spec_v1.md`) — secp256k1 ECDH, HKDF, AEAD, SHA-256 commitments. That spec is

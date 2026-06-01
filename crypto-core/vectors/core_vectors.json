@@ -1,0 +1,108 @@
+{
+  "algorithm": "TE-BSV crypto core",
+  "version": 1,
+  "spec": "spec/ALGORITHMS.md",
+  "curve": "secp256k1",
+  "note": "Cross-implementation KAT source of truth (SYS-TEST-003). Hex is lowercase, no 0x prefix.",
+  "parties": {
+    "writer": {
+      "priv": "e9873d79c6d87dc0fb6a5778633389f4453213303da61f20bd67fc233aa33262",
+      "pub": "02588d202afcc1ee4ab5254c7847ec25b9a135bbda0f2bc69ee1a714749fd77dc9"
+    },
+    "counterparty": {
+      "priv": "f8b8af8ce3c7cca5e300d33939540c10d45ce001b8f252bfbc57ba0342904181",
+      "pub": "0292df7b245b81aa637ab4e867c8d511008f79161a97d64f2ac709600352f7acbc"
+    }
+  },
+  "cases": [
+    {
+      "name": "genesis-insert-plaintext",
+      "message": {
+        "tableId": "ledger.invoices",
+        "rowId": "0001",
+        "columnId": "amount",
+        "op": 1,
+        "seq": "0",
+        "prevTxid": ""
+      },
+      "value": "313530302e3030",
+      "blinding": "1111111111111111111111111111111111111111111111111111111111111111",
+      "imageKind": 0,
+      "expect": {
+        "encodedMessage": "54454d43010000000f6c65646765722e696e766f6963657300000002000100000006616d6f756e7401000000000000000000000000",
+        "gv": "b6ae5f5bea3e385a04f05bc32078982e6c374d604c91f8798a551b08f9218d74",
+        "subPubWriter": "032569192005516b8cb2125c12a4e208d96a51bcabf96b3b8ad0d9d71a5abcb66e",
+        "subPubCounterparty": "02e5fd4bc4d8c101358f1a1167fbd18ff9a2075c7efb391d3839c3906c41782675",
+        "cs": "036ebe94935579e21d651b632f4ac0b453867a7348002e38cb14ad134d5dd38f43",
+        "kHmac": "c627215294a93057b0816889720a366ff999a8bd10a9c26f750adde6d8b54581",
+        "changeImage": "00000007313530302e3030",
+        "tag": "7123c83f8f6acb0fa554dbd981430c09ee4fc993374adce1e3227161aa626092",
+        "commit": "bba2ee1290651fcdbc556d7c4fc4e4534df9fa8b7b25318ba5305f01a0a7cc30",
+        "encodedRecord": "54455231010000000f6c65646765722e696e766f69636573000000000000000000000000000000000b00000007313530302e3030000000207123c83f8f6acb0fa554dbd981430c09ee4fc993374adce1e3227161aa626092"
+      }
+    },
+    {
+      "name": "update-confidential-commitment",
+      "message": {
+        "tableId": "ledger.invoices",
+        "rowId": "0001",
+        "columnId": "amount",
+        "op": 2,
+        "seq": "1",
+        "prevTxid": "abababababababababababababababababababababababababababababababab"
+      },
+      "value": "313439392e3935",
+      "blinding": "2222222222222222222222222222222222222222222222222222222222222222",
+      "imageKind": 1,
+      "expect": {
+        "encodedMessage": "54454d43010000000f6c65646765722e696e766f6963657300000002000100000006616d6f756e7402000000000000000100000020abababababababababababababababababababababababababababababababab",
+        "gv": "82d89d0e5fddf84b43394b3e5d13c88c429717b42e8642b5714bd9f00d32e016",
+        "subPubWriter": "02d1f2c5e0911175b29e65a5686c8fd98d653af062c78899e2d9533a45ade1eb00",
+        "subPubCounterparty": "03ed0b3c901a803b4f05d2e844ca95caf7028ba393d1b48c8d2b3317edc988a7d3",
+        "cs": "02ae709a4313cd1bc4be0ef7939e28eb174e82c9b3954c4e475ddd9c6a22ec384d",
+        "kHmac": "00812740d311a590a7516ce2832cc45df0217b2e0c427731de10bf4c7f63b0a5",
+        "changeImage": "43b6d4c9866e0d749493ad78996750c86f768c761755ef6d5187814518e88b9a",
+        "tag": "ae4a1f039a9dc611896b4813c9a62dc72c8baf172b67955be57408a330d42de2",
+        "commit": "43b6d4c9866e0d749493ad78996750c86f768c761755ef6d5187814518e88b9a",
+        "encodedRecord": "54455231010000000f6c65646765722e696e766f69636573000000000000000100000020abababababababababababababababababababababababababababababababab010000002043b6d4c9866e0d749493ad78996750c86f768c761755ef6d5187814518e88b9a00000020ae4a1f039a9dc611896b4813c9a62dc72c8baf172b67955be57408a330d42de2"
+      }
+    },
+    {
+      "name": "delete-plaintext-unicode",
+      "message": {
+        "tableId": "ledgér.notes",
+        "rowId": "00ff10",
+        "columnId": "memo",
+        "op": 3,
+        "seq": "42",
+        "prevTxid": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
+      },
+      "value": "636c6f73656420e28094207061696420696e2066756c6c20e29c93",
+      "blinding": "1111111111111111111111111111111111111111111111111111111111111111",
+      "imageKind": 0,
+      "expect": {
+        "encodedMessage": "54454d43010000000d6c656467c3a9722e6e6f7465730000000300ff10000000046d656d6f03000000000000002a00000020cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+        "gv": "f172e0901863689da1873e0c06211df1d898653fabda16060777323da4ac64d6",
+        "subPubWriter": "03b73c559a8f697a326d1fa889c8e96f09cbc467a405f5b0fbf8a53f9b620230b2",
+        "subPubCounterparty": "039eedd2617259626498ca3824c838e4c4cac94ff4103c8b11fdef7777b85713da",
+        "cs": "02121827b64d2c6d100d91aca7a3c47ceaf6fdf6728e5ddf265e091b81ef126a08",
+        "kHmac": "99c2b626d0515d7b1071bf4c3becff16ca173294e283cb57196a26dd6f2baf57",
+        "changeImage": "0000001b636c6f73656420e28094207061696420696e2066756c6c20e29c93",
+        "tag": "a1b12dd02338f49067383047009a48c83c39b5300ab5abf0f2679ef086df2845",
+        "commit": "822bfe08608e2339025369977b2064cbf82557a6e6235d075f36702a919859c2",
+        "encodedRecord": "54455231010000000d6c656467c3a9722e6e6f746573000000000000002a00000020cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd000000001f0000001b636c6f73656420e28094207061696420696e2066756c6c20e29c9300000020a1b12dd02338f49067383047009a48c83c39b5300ab5abf0f2679ef086df2845"
+      }
+    }
+  ],
+  "aead": [
+    {
+      "name": "aes-256-gcm-1",
+      "key": "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff",
+      "nonce": "0123456789ab0123456789ab",
+      "aad": "544552312d686561646572",
+      "plaintext": "636f6e666964656e7469616c206669656c6420706c61696e74657874",
+      "ciphertext": "94048f5f0fbc959ed1f51536ec3b0b8161dd7c28ace58bf99740f8c0",
+      "tag": "9443f257fe0f234cfa5339c6474b5385"
+    }
+  ]
+}

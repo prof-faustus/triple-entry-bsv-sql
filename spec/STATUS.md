@@ -2,7 +2,13 @@
 
 Updated: 2026-06-01. Legend: ✅ done · 🟡 partial/in-progress · ⛔ blocked · ⬜ not started.
 
-## Current phase: **Phase 0 — Spec freeze + decisions**
+## Current phase: **Phase 1 — Crypto core + KAT** (TS/Go; C side deferred)
+
+> Phase 0 governance is frozen (skeleton + DECISIONS + VERIFY-LOG committed). Operator decisions
+> (2026-06-01): build the Phase 1 crypto core in **TS/Go now**, **defer the C binding** until a
+> toolchain exists (so Appendix B.1's C-parity clause stays open); **re-derive the CTO primitives**
+> with documented assumptions (`spec/CTO-PRIMITIVES.md`). The regtest bring-up (Docker, E2) remains a
+> Phase-0 item to close before Phase 2.
 
 ### Phase 0 exit criteria (Spec §13 / kickoff)
 | Phase-0 task | Status | Evidence |
@@ -17,6 +23,21 @@ Updated: 2026-06-01. Legend: ✅ done · 🟡 partial/in-progress · ⛔ blocked
 **Phase 0 is NOT fully exited:** the regtest bring-up cannot be confirmed without Docker, and two
 blockers (missing CTO spec E1; no C toolchain E3) gate downstream phases. See "Blockers" below.
 
+### Phase 1 results (TS/Go; C deferred)
+| Deliverable (Appendix B.1) | Status | Evidence |
+|---|---|---|
+| ECDH common-secret (EP3860037A1) | ✅ | `commonSecretAsWriter`/`AsCounterparty`; symmetric (writer-side == counterparty-side) in both impls |
+| HKDF-SHA256 | ✅ | `deriveHmacKey`; RFC-5869 case-1 KAT green (TS+Go) |
+| HMAC-SHA256 | ✅ | `tag`; RFC-4231 case-2 KAT green (TS+Go) |
+| SHA-256 blinded commitment | ✅ | `commit`; binding/hiding/determinism tests |
+| Canonical length-prefixed encoder/decoder | ✅ | `Writer`/`Reader`, message + record; round-trip + rejection tests |
+| AEAD (AES-256-GCM, re-derived) | ✅ | encrypt/decrypt + tamper-fail; vector match (TS+Go) |
+| **Cross-impl vectors identical** (`SYS-TEST-003`) | ✅ | Go `TestCoreVectors` recomputes the TS-generated `crypto-core/vectors/core_vectors.json` byte-for-byte; 14 TS + 7 Go tests green |
+| **C ↔ TS/Go parity** (Appendix B.1 C clause) | ⏸ OPEN | C binding deferred (E3); to be added when a toolchain exists |
+
+Run: `cd crypto-core/ts && NODE_OPTIONS=--use-system-ca npm test` · `cd crypto-core/go && go test ./...`
+Regenerate vectors (TS is the source of truth): `cd crypto-core/ts && npm run gen-vectors`.
+
 ## Requirement coverage snapshot (Appendix A)
 All 110 requirements are ⬜ **not started** except the Phase-0 governance items below. This is a
 freeze/scaffold state — no functional code yet.
@@ -29,17 +50,17 @@ freeze/scaffold state — no functional code yet.
 | `SYS-DECIDE-001/005/008/010` | ✅ | Locked, recorded. |
 | `SYS-DECIDE-002/003/004/006/007/009` | 🟡 | Proposed, pending confirmation. |
 | `SYS-NODE-001/002/003`, `SYS-CON-006` | ⛔ | Blocked on Docker (E2); interfaces pinned (B1–B6) ready to wire. |
-| everything else (`SYS-HMAC-*`, `SYS-PG-*`, `SYS-TOK-*`, `SYS-EDI-*`, `SYS-LOG-*`, `SYS-DOC-*`, `SYS-PROOF-*`, `SYS-CUST-*`, `SYS-OVL-*`, `SYS-COMP-*`, `SYS-TEST-*`) | ⬜ | Phases 1–7. |
+| `SYS-ENC-005` (canonical encoding) | 🟡 | Encoder/decoder done in TS+Go (`crypto-core`); C side + on-chain script wiring later. |
+| `SYS-HMAC-002/003/004` (GV/subkeys/CS, K_hmac, tag) | 🟡 | Algorithms implemented + KAT-green in TS+Go; on-chain placement (`SYS-HMAC-005`), hash chain (`008`), discoverability (`006`) are Phase 2. |
+| `SYS-HMAC-009` (blinded commitment) | 🟡 | `commit` done TS+Go. |
+| `SYS-TEST-003` (cross-impl vectors) | 🟡 | TS↔Go green; C clause open. |
+| `SYS-SUB-001` (CTO primitives) | 🟡 | Re-derived + documented (`CTO-PRIMITIVES.md`); ECDH/HKDF/HMAC/commitment/AEAD implemented; UTXO-lineage/time-locked recovery/Tier F-S-T later. |
+| everything else (`SYS-PG-*`, `SYS-TOK-*`, `SYS-EDI-*`, `SYS-LOG-*`, `SYS-DOC-*`, `SYS-PROOF-*`, `SYS-CUST-*`, `SYS-OVL-*`, `SYS-COMP-*`) | ⬜ | Phases 2–7. |
 
-## Blockers (must be cleared to continue the autonomous run)
-1. **⛔ Docker not installed (E2)** — required for Phase 0 exit (regtest) and all regtest tests.
-2. **⛔ No C toolchain (E3)** — required for the PostgreSQL-18 C fork (Phase 3) and C crypto bindings
-   (Phase 1). `node`/`go` present, so TS/Go work can proceed.
-3. **⛔ Missing `CTO_BSV_Build_Spec_v1.md` (E1)** — the confidential-object substrate this system builds
-   on; needed to ground commitments/AEAD (Phase 1) and threshold custody (Phase 6). The ECDH-HMAC
-   keystone (§5, EP3860037A1) is self-contained and can proceed without it.
-
-## What can proceed now without clearing blockers
-- **Phase 1 (TS/Go side):** the crypto core — ECDH common-secret (EP3860037A1), HKDF, HMAC-SHA256, the
-  canonical length-prefixed encoder/decoder, and shared KAT vectors — in TypeScript and Go, with vectors
-  authored in `crypto-core/vectors/`. (The C side and CTO-grounded commitment/AEAD await E1/E3.)
+## Blockers / deferrals
+1. **⛔ Docker not installed (E2)** — required to close the Phase 0 regtest item and for Phase 2 + all
+   regtest tests. Still open; revisit before Phase 2.
+2. **⏸ No C toolchain (E3) — DEFERRED by operator** — C crypto binding (Phase 1) and the PostgreSQL-18
+   fork (Phase 3) wait for a toolchain. TS/Go proceed now; **Appendix B.1 C-parity clause stays open**.
+3. **✍ Missing CTO spec (E1) — RESOLVED-BY-DERIVATION** — primitives re-derived & documented in
+   `spec/CTO-PRIMITIVES.md`, flagged for review; reconcile if the authoritative CTO spec is supplied.

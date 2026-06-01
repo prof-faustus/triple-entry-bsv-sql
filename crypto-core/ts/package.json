@@ -1,0 +1,19 @@
+{
+  "name": "@te-bsv/crypto-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared crypto core (ECDH common-secret / HKDF / HMAC / commitment / canonical encoding) — TS side. Spec: ../../spec/ALGORITHMS.md",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "tsc -p tsconfig.json && node --test \"dist/test/*.test.js\"",
+    "gen-vectors": "tsc -p tsconfig.json && node dist/test/gen-vectors.js"
+  },
+  "dependencies": {
+    "@noble/curves": "1.9.7"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "@types/node": "24.10.4"
+  }
+}
