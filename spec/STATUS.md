@@ -2,10 +2,26 @@
 
 Updated: 2026-06-01. Legend: ✅ done · 🟡 partial/in-progress · ⛔ blocked · ⬜ not started.
 
-## Current phase: **Phase 5 — EDI DFA + logistics + bridge ✅ COMPLETE** (operator-confirmed)
+## Current phase: **Phase 6 — proofs / custody / overlay / computation ✅ COMPLETE**
 
-> Progress: Phases 0–4 ✅, **Phase 5 ✅** (EDI document DFAs, logistics, X12/EDIFACT bridge).
-> Next: Phase 6 (proofs / custody / overlay / computation).
+> Progress: Phases 0–5 ✅, **Phase 6 ✅**. Next: Phase 7 (hardening — reorg, idempotency,
+> confirmation-depth gating, security review).
+
+### Phase 6 result (2026-06-01) — PASS (Appendix B.10; unit-tested Go packages)
+- **`spv`** (`SYS-PROOF-*`; WO2022100946A1, WO2022214264A1): transaction-Merkle proof + branch verify,
+  **BURI** encode/parse, SPV-verify against a block-header Merkle root **without the block payload**;
+  round-trip + tamper + single-tx-block tests green.
+- **`custody`** (`SYS-CUST-*`; EP3259724B1, US11671255): loss-resistant Shamir sharing over GF(n)
+  (k-of-n recover; sub-threshold reveals nothing), shares **encrypted under the ECDH common secret**,
+  ≥3-locations-incl-backup layout, and native **bare OP_CHECKMULTISIG** N-of-M (no P2SH). Tests green.
+- **`overlay`** (`SYS-OVL-*`; EP4046048B1): BIP32-style **CKD hierarchy** whose keys mirror the overlay
+  graph (deterministic, structure-aligned addressing; parent derives child). Tests green.
+- **`compute`** (`SYS-COMP-*`; US20240364498A1): staked-proposer/challenge market — post→commit→
+  challenge→resolve under group **threshold control**, feeding a resolved **DFA event** (SYS-COMP-002).
+  Tests green.
+- Scope: `spv`/`custody`/`overlay`/`compute` are verified as unit-tested primitives; deeper wiring
+  (BURI export inside `te_verify`, no-reconstruction threshold-ECDSA per US11671255, on-chain multisig
+  spend, compute→edi live injection) are documented slices.
 
 ### Phase 5 result (2026-06-01) — PASS (Appendix B.8, B.9, on regtest)
 - `services-go/edi` (DFA-as-UTXO engine + DHT + ownership/integrity), `edibridge`, `cmd/edie2e`;
