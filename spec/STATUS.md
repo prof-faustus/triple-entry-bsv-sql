@@ -2,11 +2,27 @@
 
 Updated: 2026-06-01. Legend: ✅ done · 🟡 partial/in-progress · ⛔ blocked · ⬜ not started.
 
-## Current phase: **Phase 2 — Node + hash-chain log ✅ COMPLETE** (next: Phase 3, gated on C toolchain)
+## Current phase: **Phase 3 — PostgreSQL fork ✅ COMPLETE (vertical slice)** — kickoff CHECKPOINT reached
 
-> Progress: Phase 0 ✅, Phase 1 ✅ (TS/Go crypto core, parity green), **Phase 2 ✅** —
-> 2a (Teranode regtest up), 2b (spendable envelope), 2c (broadcast + discovery + cold-rebuild on the
-> live regtest node). Phase 3 (PostgreSQL-18 C fork) is gated on a C toolchain (E3, deferred).
+> Progress: Phase 0 ✅, Phase 1 ✅, Phase 2 ✅, **Phase 3 ✅** (vertical slice). The working
+> triple-entry core is done: ordinary SQL → ECDH-HMAC third entry in a spendable on-chain script →
+> hash-chained → cold-rebuildable from the chain alone, matching the live DB. This is the kickoff's
+> Phase-3 checkpoint. Phases 4–7 are gated behind operator go-ahead.
+
+### Phase 3 result (2026-06-01) — PASS (PostgreSQL 18.4 + regtest, in WSL)
+- **PG 18.4** installed (PGDG) in WSL on :5433; `pg-fork` = PG18 + `te` schema + Go writer.
+- **Capture** (`SYS-PG-002/003`, `SYS-DECIDE-002`): `te.capture()` AFTER trigger writes per-changed-column
+  rows to `te.outbox` **atomically with the user's commit**; verified 4 changes from plain INSERT/UPDATE.
+- **Writer** (`services-go/cmd/tewriter`): drains outbox in commit order → `M(c)→tag` → broadcasts a
+  hash-chained third-entry stream on regtest (spendable envelope, `SIGHASH_ALL|FORKID`) → `te.chain_index`.
+- **Cold-rebuild** (`SYS-PG-004`, Appendix B.4): from chain head txid + master keys alone, tag-verified
+  every entry and reconstructed the ledger == **live DB** ✓.
+- **`te.verify()`** (`SYS-PG-006`): SQL-callable, returns each column's on-chain anchor (seq + txid).
+- Reproduce: `node-docker/regtest-up.sh` (node), `pg-fork/install-pg18.sh` (db), `pg-fork/run-pg-e2e-wsl.sh` (e2e).
+
+**Scope honesty:** vertical slice — single demo table, plaintext fields, PL/pgSQL trigger capture (not
+in-core), keys in-DB (not yet threshold custody), async single-writer. `te_render_pdf`, confidential
+commitments path, reorg/idempotency hardening, and the full multi-table/multi-stream story remain.
 
 ### Phase 2c result (2026-06-01) — PASS on live Teranode regtest
 `services-go/cmd/streame2e` ran end-to-end against the regtest node (executed inside WSL to avoid a
@@ -79,8 +95,9 @@ freeze/scaffold state — no functional code yet.
 | `SYS-ENC-001/002`, `SYS-CON-002/008` (spendable data envelope) | ✅ | `services-go/bsvscript` carriers + static check; **broadcast & accepted on regtest** in the e2e (B.5). |
 | `SYS-HMAC-005/006/008` (tag on-chain, discovery, hash chain) | ✅ | e2e: tag in spendable script; recomputed-tag discovery; `prev_txid` chain walked in cold-rebuild (B.2). |
 | `SYS-ENC-004` (sighash binds successors) | ✅ | all stream txs signed `SIGHASH_ALL\|FORKID` and accepted (B.6). |
-| `SYS-PG-004` (cold-rebuild from chain) | 🟡 | demonstrated on the toy on-chain stream (chain+keys → ledger); full DB cold-rebuild is Phase 3. |
-| `SYS-NODE-002` (RPC + events) | 🟡 | RPC client (`services-go/node`) broadcasts/queries live; Kafka event relay still Phase 2+ wiring. |
+| `SYS-PG-004` (cold-rebuild from chain) | ✅ | `tewriter` cold-rebuilds `public.accounts` from chain+keys == live DB (Appendix B.4, vertical slice). |
+| `SYS-PG-001/002/003/005/006` | 🟡 | PG18 fork + atomic trigger capture + outbox + `te.journal_table`/`te.verify` SQL surface (vertical slice; hardening/te_render_pdf later). |
+| `SYS-NODE-002` (RPC + events) | 🟡 | RPC client (`services-go/node`) broadcasts/queries live; Kafka event relay still later wiring. |
 | `SYS-HMAC-002/003/004` (GV/subkeys/CS, K_hmac, tag) | 🟡 | Algorithms implemented + KAT-green in TS+Go; on-chain placement (`SYS-HMAC-005`), hash chain (`008`), discoverability (`006`) are Phase 2. |
 | `SYS-HMAC-009` (blinded commitment) | 🟡 | `commit` done TS+Go. |
 | `SYS-TEST-003` (cross-impl vectors) | 🟡 | TS↔Go green; C clause open. |
