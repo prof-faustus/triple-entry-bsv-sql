@@ -17,26 +17,34 @@ Last updated: 2026-06-01.
 | `SYS-DECIDE-008` | PostgreSQL version | **PostgreSQL 18** (latest major; PostgreSQL License, fork-permissive). Exact 18.x minor pinned in `VERIFY-LOG.md`. |
 | `SYS-DECIDE-010` | BSV node | **Teranode** (Go microservices) via `teranode-quickstart` Docker; regtest for dev/test; Chronicle-current. |
 
+## Locked by operator direction to complete the build (2026-06-01)
+
+### `SYS-DECIDE-002` — Write-interception mechanism — **LOCKED: (b) trigger + transactional outbox**
+**Chosen:** capture via an `AFTER INSERT/UPDATE/DELETE` trigger (`te_capture`) that writes per-changed-
+column rows into a `te_outbox` table **within the same database transaction** as the user's commit —
+directly satisfying `SYS-PG-003` (journalled atomically with the commit) and `SYS-PG-002` (exactly once,
+commit order, with table/row/column identity). A background Go writer drains the outbox and broadcasts
+the third entry (async default, `SYS-DECIDE-003`).
+**Rationale / honesty:** this realises option (b) without a deep in-core fork — it runs on stock
+PostgreSQL 18 + a loadable schema, so the "fork" is PG18 + this extension/catalog (fork-permissive
+licence preserved). The Spec's option (a) logical-decoding remains the upgrade path for higher throughput;
+(c) in-core hooks are deferred as highest-maintenance. The vertical slice uses PL/pgSQL triggers (no core
+recompile); a production build may push capture in-core. Commit-ordering is provided by a monotonic
+`seq` assigned in the outbox.
+
+### `SYS-DECIDE-003` — Journalling mode — **LOCKED: async outbox default**
+Async outbox is the default (Go writer drains it; at-least-once + idempotent dedup by `M(c)`);
+synchronous commit-on-chain remains available per deployment. Matches the Spec default.
+
+### `SYS-DECIDE-006` — Stream granularity — **LOCKED: per-ledger (per-relationship)**
+One genesis-rooted hash chain per ledger relationship (both parties reconcile one shared stream,
+`SYS-TE-002`); optional per-table sub-streams for sharding, union reconstructs the ledger (`SYS-HMAC-008`).
+
+### `SYS-DECIDE-007` — Counterparty/auditor key — **LOCKED: per-relationship registry, auditor default**
+A per-relationship counterparty registry (`te_relationship`); for single-party books the ECDH
+counterparty defaults to a designated auditor key (`SYS-HMAC-002`), overridable per relationship.
+
 ## Open — PROPOSED (pending operator confirmation)
-
-### `SYS-DECIDE-002` — Write-interception mechanism  *(bites: Phase 3)*
-**Options:** (a) logical decoding / WAL output plugin; (b) native C extension with commit hooks;
-(c) deeper in-core commit-path hooks.
-**Proposed:** **(a) logical-decoding output plugin as the authoritative commit-ordered capture**, with
-the transactional outbox (`SYS-PG-003`) populated atomically with the commit, augmented by a thin
-in-core hook only where logical decoding cannot supply the table/row/**column** identity `M(c)` needs
-(use `REPLICA IDENTITY FULL` for old/new column values).
-**Rationale:** logical decoding gives committed changes **in commit order, exactly once**, via a stable
-documented API, and is the **least invasive to maintain against PostgreSQL 18 upstream** — which matters
-because this is a long-lived fork. Pure in-core hooks (c) maximise control but maximise merge-maintenance
-cost and risk; trigger-only capture (b) gives weaker commit-ordering/column-identity guarantees.
-**Open question for operator:** is minimal-divergence-from-upstream (favours a) or deepest-control
-(favours c) the priority for this fork?
-
-### `SYS-DECIDE-003` — Journalling mode  *(bites: Phase 3)*
-**Proposed (per Spec default):** **async outbox = default** (throughput; outbox guarantees no lost entry
-with at-least-once delivery + idempotent dedup by `M(c)`); **synchronous commit-on-chain** offered and
-selectable per deployment for use cases needing on-acceptance finality. No open conflict — confirm only.
 
 ### `SYS-DECIDE-004` — Confirmation depth for accounting finality  *(bites: Phase 3/7)*
 **Proposed:** configurable **per use case**; defaults — regtest/dev = **1**; testnet/mainnet general =
