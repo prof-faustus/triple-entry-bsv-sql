@@ -24,3 +24,12 @@ entitlement keys (CTO confidentiality rules).
 
 ## Exit criteria (Phase 5 / Appendix B.3)
 `te_render_pdf()` emits a deterministic, SPV-verifiable PDF; B/L copy marked non-negotiable.
+
+## Status — implemented (2026-06-01)
+`services-go/docrender` renders a **deterministic, byte-stable** single-page PDF embedding `object_id`,
+state, controller, cross-refs, the **BURI**, and the body integrity hash (`H4`); for a `bill_of_lading`
+it stamps the **non-negotiable** marking (`SYS-DOC-002/003/004`, `SYS-LOG-012`). Tests assert
+byte-stability, embedded fields, the B/L marking (and its absence on other docs), and that the body
+hash binds the state. **Remaining slices:** the scannable **QR** of the BURI (`SYS-DOC-002`, needs a QR
+lib + image embed) and the thin **SQL `te_render_pdf()` wrapper** (`SYS-DOC-005`) sourcing fields from
+the chain/`te` schema and returning the `docrender` bytes.
