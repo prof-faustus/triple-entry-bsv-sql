@@ -1,0 +1,3 @@
+# Shared cross-implementation known-answer vectors (Phase 1).
+# Single source of truth for ECDH / HKDF / HMAC / commitment / encoder parity
+# across the C fork and the TS/Go components (SYS-TEST-003). Populated in Phase 1.

@@ -1,0 +1,43 @@
+# Node / TS
+node_modules/
+dist/
+*.tsbuildinfo
+.npm/
+
+# Go
+/bin/
+*.exe
+*.test
+*.out
+
+# C / PostgreSQL fork build artefacts
+*.o
+*.so
+*.dylib
+*.a
+/pg-fork/build/
+/pg-fork/install/
+/pg-fork/postgresql-*/   # upstream source tree, fetched at build time
+
+# Docker / node data
+/node-docker/data/
+/node-docker/.env
+
+# Local secrets / keys (never commit)
+*.pem
+*.key
+secrets/
+.env
+.env.local
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Generated proof/PDF artefacts (tests regenerate)
+/doc-render/out/
+*.pdf
+!spec/**/*.pdf
