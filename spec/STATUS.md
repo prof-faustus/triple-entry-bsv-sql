@@ -2,7 +2,35 @@
 
 Updated: 2026-06-01. Legend: ✅ done · 🟡 partial/in-progress · ⛔ blocked · ⬜ not started.
 
-## Current phase: **Phase 1 — Crypto core + KAT** (TS/Go; C side deferred)
+## Current phase: **Phase 2 — Node + hash-chain log** (2a ✅ node up, 2b ✅ envelope, 2c in progress)
+
+> Progress: Phase 0 ✅ (regtest confirmed), Phase 1 ✅ (TS/Go crypto core, parity green),
+> Phase 2a ✅ (Teranode regtest up in WSL Docker), Phase 2b ✅ (spendable data-envelope builder).
+> **Phase 2c (broadcast + discovery + cold-rebuild on regtest) is the remaining Phase-2 work.**
+
+### Phase 2c plan (de-risked 2026-06-01; not yet built)
+Funding mechanism **verified viable** on Teranode regtest:
+- `generatetoaddress <addr>` mines a coinbase with a P2PKH output to a key we control; for a
+  single-tx block **`merkleroot == coinbase txid`**, and `getrawtransaction <txid>` returns the raw
+  coinbase (3 standard P2PKH outputs observed). Mine +100 blocks for coinbase maturity, then spend.
+- go-sdk confirmed for tx build/sign: `transaction.NewTransaction`, `AddInputFrom`,
+  `p2pkh.Unlock(priv, &sighash.AllForkID)`, `tx.Sign()`, `tx.Hex()`/`TxID()`; broadcast via
+  `sendrawtransaction`; mine via `generate`.
+
+Remaining build (Go, `services-go`): fund → build a stream of N txs, each carrying a hash-chained
+ECDH-HMAC record in a spendable envelope (`bsvscript`), spending the prior tx's P2PKH output so the
+UTXO lineage **is** the stream; broadcast each; tag-discovery index `(table,row,col,seq)→txid`;
+cold-rebuild the toy stream from genesis + master keys, asserting equality. Exit: Appendix B.2/B.5/B.6.
+
+**Design refinement needed for self-contained cold-rebuild (`SYS-PG-004`, `SYS-HMAC-010`):** the
+on-chain record must carry the canonical `M(c)` (table/row/column/op + seq + prev_txid) so the row is
+reconstructable from chain alone. Plan: redefine REC = `MAGIC_R, version, stream_id, encode(M(c)),
+image_kind, change_image, tag` (ALGORITHMS.md §1.2). This changes only the `encodedRecord` KAT vector
+(GV/CS/tag are unaffected); regenerate vectors and re-run TS+Go parity.
+
+---
+
+## Phase 1 — Crypto core + KAT (TS/Go; C side deferred)
 
 > Phase 0 governance is frozen (skeleton + DECISIONS + VERIFY-LOG committed). Operator decisions
 > (2026-06-01): build the Phase 1 crypto core in **TS/Go now**, **defer the C binding** until a
