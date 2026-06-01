@@ -114,15 +114,18 @@ tag(c) = HMAC-SHA256(K_hmac, change_image)        # 32 bytes
 
 ---
 
-## 4. SHA-256 blinded commitment (`SYS-HMAC-009`, `SYS-SUB-001`)
+## 4. CTO blinded commitment (`SYS-HMAC-009`, `SYS-SUB-001`)
 
+The CTO substrate commitment (`CTO_BSV_Build_Spec_v1.md` §6 / Step T4), **raw concatenation** so it is
+openable on-chain via `OP_CAT` (CTO-SCRIPT-004):
 ```
-commit(value, r) = SHA-256( utf8("TE/commit/v1") ‖ u32(len(r)) ‖ r ‖ u32(len(value)) ‖ value )
+commit(value, r) = SHA-256( utf8("CTO/commit/v1") ‖ r ‖ value )      # r = 32-byte blinding
 ```
-- `r` = 32-byte uniformly random blinding factor; stored with the plaintext in the confidential DB row.
-- Binding: SHA-256 collision resistance. Hiding: random `r` (RO/PRF assumption).
-- This is a **hash commitment** — *not* additively homomorphic. The EC/homomorphic commitment of
-  `SYS-PROOF-004` (Merkle-node sums) is a separate, optional Phase-6 primitive and is **not** this one.
+- `r` = 32-byte uniformly random blinding factor (mandatory; unblinded commitments are prohibited for
+  confidential payloads). Stored with the plaintext in the confidential DB row.
+- Binding: SHA-256 collision resistance. Hiding: random `r`.
+- A **hash commitment** — *not* additively homomorphic. The EC/homomorphic commitment of `SYS-PROOF-004`
+  (Merkle-node sums) is a separate, optional Phase-6 primitive and is **not** this one.
 
 ---
 

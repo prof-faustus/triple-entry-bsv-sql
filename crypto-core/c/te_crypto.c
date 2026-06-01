@@ -135,8 +135,8 @@ int te_derive_hmac_key(const uint8_t *cs, size_t csl, const te_msg_t *m, uint8_t
 }
 void te_commit(const uint8_t *value, size_t vl, const uint8_t *r, size_t rl, uint8_t out[32]) {
   buf_t b; buf_init(&b);
-  w_raw(&b, (const uint8_t *)"TE/commit/v1", 12);
-  w_bytes(&b, r, rl);
-  w_bytes(&b, value, vl);
+  w_raw(&b, (const uint8_t *)"CTO/commit/v1", 13); // CTO substrate commitment, raw concat (§6/T4)
+  w_raw(&b, r, rl);
+  w_raw(&b, value, vl);
   te_sha256(b.p, b.len, out); buf_free(&b);
 }

@@ -133,6 +133,49 @@ func (c *Client) GetRawTransaction(txid string) (string, error) {
 	return s, nil
 }
 
+// --- wallet RPCs (SV Node bitcoind has a built-in wallet; Teranode does not) ---
+
+// GetNewAddress returns a fresh wallet address.
+func (c *Client) GetNewAddress() (string, error) {
+	raw, err := c.Call("getnewaddress")
+	if err != nil {
+		return "", err
+	}
+	var s string
+	return s, json.Unmarshal(raw, &s)
+}
+
+// SendToAddress sends `amount` BSV from the wallet to addr and returns the funding txid.
+func (c *Client) SendToAddress(addr string, amount float64) (string, error) {
+	raw, err := c.Call("sendtoaddress", addr, amount)
+	if err != nil {
+		return "", err
+	}
+	var s string
+	return s, json.Unmarshal(raw, &s)
+}
+
+// Vout is one output of a verbose getrawtransaction.
+type Vout struct {
+	Value        float64 `json:"value"`
+	N            int     `json:"n"`
+	ScriptPubKey struct {
+		Hex string `json:"hex"`
+	} `json:"scriptPubKey"`
+}
+
+// GetRawTxVerbose returns the decoded outputs of a transaction (getrawtransaction txid 1).
+func (c *Client) GetRawTxVerbose(txid string) ([]Vout, error) {
+	raw, err := c.Call("getrawtransaction", txid, 1)
+	if err != nil {
+		return nil, err
+	}
+	var v struct {
+		Vout []Vout `json:"vout"`
+	}
+	return v.Vout, json.Unmarshal(raw, &v)
+}
+
 // InvalidateBlock marks a block invalid, forcing a reorg away from it (regtest reorg tests).
 func (c *Client) InvalidateBlock(hash string) error {
 	_, err := c.Call("invalidateblock", hash)

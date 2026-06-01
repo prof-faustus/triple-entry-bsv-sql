@@ -6,7 +6,7 @@ import { addScalarsModN, bytesToBigIntBE, mulPointByScalar, pubAddScalarG } from
 import { encodeMessage, type ChangeMessage } from "./message.js";
 
 const HMAC_DOMAIN = utf8("TE/hmac/v1");
-const COMMIT_DOMAIN = utf8("TE/commit/v1");
+const COMMIT_DOMAIN = utf8("CTO/commit/v1"); // CTO substrate commitment (CTO_BSV_Build_Spec_v1 §6/T4)
 
 /** GV = SHA-256(M(c)), as a big-endian scalar. ALGORITHMS.md §2 */
 export function generatorValue(m: ChangeMessage): { gvBytes: Uint8Array; gv: bigint } {
@@ -45,10 +45,10 @@ export function tag(kHmac: Uint8Array, changeImage: Uint8Array): Uint8Array {
   return hmacSha256(kHmac, changeImage);
 }
 
-/** SHA-256 blinded commitment. ALGORITHMS.md §4 / CTO-PRIMITIVES.md C. */
+/** CTO blinded commitment: SHA-256(domain ‖ r ‖ value), raw concat, r = 32-byte blinding
+ *  (CTO_BSV_Build_Spec_v1 §6 / Step T4; on-chain-openable via OP_CAT). ALGORITHMS.md §4. */
 export function commit(value: Uint8Array, r: Uint8Array): Uint8Array {
-  const pre = new Writer().raw(COMMIT_DOMAIN).bytes(r).bytes(value).finish();
-  return sha256(pre);
+  return sha256(concat(COMMIT_DOMAIN, r, value));
 }
 
 /** Convenience: full keystone from writer's perspective → { gv, cs, kHmac, tag }. */

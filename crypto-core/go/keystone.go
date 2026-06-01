@@ -141,9 +141,10 @@ func DeriveHMACKey(cs []byte, m ChangeMessage) ([]byte, error) {
 // Tag: HMAC-SHA256(K_hmac, change_image).
 func Tag(kHmac, changeImage []byte) []byte { return HMACSHA256(kHmac, changeImage) }
 
-// Commit is the SHA-256 blinded commitment commit(value, r). ALGORITHMS.md §4.
+// Commit is the CTO blinded commitment: SHA-256(domain ‖ r ‖ value), raw concat, r = 32-byte blinding
+// (CTO_BSV_Build_Spec_v1 §6 / Step T4; on-chain-openable via OP_CAT). ALGORITHMS.md §4.
 func Commit(value, r []byte) []byte {
-	pre := NewWriter().Raw([]byte("TE/commit/v1")).Bytes(r).Bytes(value).Finish()
+	pre := NewWriter().Raw([]byte("CTO/commit/v1")).Raw(r).Raw(value).Finish()
 	return SHA256(pre)
 }
 

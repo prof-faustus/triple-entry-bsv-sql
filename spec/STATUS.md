@@ -19,6 +19,19 @@ Updated: 2026-06-01. Legend: ✅ done · 🟡 partial/in-progress · ⛔ blocked
   checks, never in a produced script; sighash `FORKID` enforced; confidentiality boundary stated.
 - Helpers: `node-docker/lib/reset-regtest.sh` (clean chain), `services-go/run-harden-e2e-wsl.sh`.
 
+### Validation against the running SV Node wallet (operator correction, 2026-06-01)
+A funded **SV Node `bitcoind` regtest wallet** is running (RPC `:18443`, ~600 BSV spendable). The
+keystone e2e was re-run **funded from that wallet and broadcast to that real full-consensus node**
+(`services-go/cmd/svnodee2e`, `run-svnode-e2e-wsl.sh`): `sendtoaddress` → 4 hash-chained ECDH-HMAC
+third entries (spendable envelopes, no OP_RETURN/P2SH, `SIGHASH_ALL|FORKID`) **accepted by the SV
+Node**, cold-rebuild == source. Stronger than the Teranode raw-tx path (real consensus script
+validation); corrects the earlier "operator must supply funds" framing — the funded test wallet was
+already running and is the intended funding source.
+
+**CTO spec found:** `CTO_BSV_Build_Spec_v1.md` (the `SYS-SUB-001` dependency) **exists** at
+`D:\claude\cto\spec\source\` — it was NOT missing. `spec/CTO-PRIMITIVES.md` (re-derivation) reconciled
+against it; see `VERIFY-LOG.md` E1.
+
 ### Post-build follow-ups (operator-directed "all")
 - **Repo pushed**: private GitHub `prof-faustus/triple-entry-bsv-sql` (master).
 - **Appendix B.1 closed**: `crypto-core/c` C core reproduces the shared vectors 40/40 byte-for-byte

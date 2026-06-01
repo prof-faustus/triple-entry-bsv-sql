@@ -1,13 +1,22 @@
-# CTO-PRIMITIVES.md — re-derived CTO substrate primitives (FOR REVIEW)
+# CTO-PRIMITIVES.md — CTO substrate primitives (RECONCILED 2026-06-01)
 
-> **Status: re-derivation, pending review.** The Spec (line 15, `SYS-SUB-001`, `SYS-CON-007`) builds on
-> the CTO confidential-object primitive defined in `CTO_BSV_Build_Spec_v1.md`, which is **not present in
-> this repository**. Per the operator decision of 2026-06-01, this document **re-derives the CTO
-> primitives the build needs from standard constructions and EP3860037A1**, states every assumption
-> explicitly, and flags them for review. **If the authoritative `CTO_BSV_Build_Spec_v1.md` is later
-> supplied, every item here MUST be reconciled against it; any divergence is a `[VERIFY]` gate**
-> (`VERIFY-LOG.md` E1). Nothing here is asserted as the CTO spec's actual content — these are our
-> documented, reviewable stand-ins.
+> **Status: reconciled against the authoritative spec.** The CTO spec was initially believed missing
+> and these primitives were re-derived; it was then located at `D:\claude\cto\spec\source\
+> CTO_BSV_Build_Spec_v1.md` and this document has been **reconciled against it**. Outcome:
+> - **Commitment — ALIGNED (was divergent):** CTO §6/Step T4 specifies `SHA-256("CTO/commit/v1" ‖ r ‖
+>   value)` (raw concat, 32-byte `r`, on-chain-openable via `OP_CAT`). The implementations were changed
+>   from a length-prefixed `TE/commit/v1` form to this exact CTO format; C/TS/Go vectors regenerated, all
+>   parity tests green.
+> - **HKDF / AEAD / ECDH-octet-form — consistent:** the CTO spec mandates HKDF-SHA256 (RFC 5869),
+>   AES-256-GCM **or** ChaCha20-Poly1305 (we use AES-256-GCM, an allowed default), and leaves exact HKDF
+>   salt/info placement and the ECDH-secret octet form as its own `[VERIFY]` items — our choices fall
+>   within them.
+> - **Layering:** the TE per-change keystone uses **EP3860037A1** (additive sub-keys), which is a
+>   *different* mechanism from the CTO per-transfer forward secret (`OTS = ECDH(ephemeral, recipient)`);
+>   both coexist. TE is **stricter** than CTO on carriage: CTO permits `OP_RETURN`, TE forbids it
+>   (`SYS-CON-008`) — TE always uses spendable envelopes.
+> - **Tiers:** Tier S (threshold custody) ↔ `services-go/custody` (Shamir + bare multisig); Tier T (TEE)
+>   not implemented.
 
 The byte-exact definitions live in `ALGORITHMS.md`; this file gives the construction choices and why.
 
@@ -31,13 +40,13 @@ Used to derive `K_hmac` (and `K_aead`) from `CS`, never using `CS` as a key dire
   ‖ u64(seq)`), giving the required domain separation. *Reviewer check: acceptable vs folding `domain`
   into `salt`.*
 
-## C. SHA-256 blinded commitment  *(re-derived; `SYS-SUB-001` "SHA-256 commitments")*
-`commit(value, r) = SHA-256("TE/commit/v1" ‖ len-prefixed r ‖ len-prefixed value)` with 32-byte random
-`r` (`ALGORITHMS.md` §4).
-- **Assumption C1:** a **hash commitment** (binding via collision-resistance, hiding via random `r`) is
-  what `SYS-SUB-001`'s "SHA-256 commitments" means. It is **not additively homomorphic**; the EC
-  homomorphic commitment of `SYS-PROOF-004` is a *separate* optional primitive. *Reviewer check: confirm
-  the CTO spec's commitment is a hash commitment and not Pedersen/EC for the field-value use.*
+## C. CTO blinded commitment  *(RECONCILED to CTO §6/T4)*
+`commit(value, r) = SHA-256("CTO/commit/v1" ‖ r ‖ value)` — **raw** concat, `r` = 32-byte random
+blinding (`ALGORITHMS.md` §4). Matches `CTO_BSV_Build_Spec_v1` §6 / Step T4 exactly, so a TE field
+commitment is byte-identical to a CTO commitment and openable on-chain via `OP_CAT` (CTO-SCRIPT-004).
+- **C1 (resolved):** the CTO spec confirms a **hash commitment** with mandatory 32-byte blinding (not
+  Pedersen/EC). The earlier length-prefixed `TE/commit/v1` form was changed to this. Not additively
+  homomorphic; the EC commitment of `SYS-PROOF-004` is a separate optional primitive.
 
 ## D. AEAD = AES-256-GCM  *(re-derived; `SYS-SUB-001` "AEAD")*
 Confidential payloads (private ledger fields, document/goods bodies) are encrypted under a key derived
