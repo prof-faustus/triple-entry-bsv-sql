@@ -52,6 +52,7 @@ freeze/scaffold state — no functional code yet.
 | `SYS-NODE-001/003`, `SYS-CON-006` | ✅ | Teranode regtest up in WSL Docker; blocks on demand; reproducible (`node-docker/`). |
 | `SYS-NODE-002` (RPC + events) | 🟡 | RPC verified (getblockchaininfo/generate/getblock); Kafka topics identified (B7); `services-go` wiring is Phase 2c. |
 | `SYS-ENC-005` (canonical encoding) | 🟡 | Encoder/decoder done in TS+Go (`crypto-core`); C side + on-chain script wiring later. |
+| `SYS-ENC-001/002`, `SYS-CON-002/008` (spendable data envelope) | 🟡 | `services-go/bsvscript`: OP_FALSE OP_IF / OP_DROP carriers + native P2PKH tail; data round-trip; **static check rejects P2SH/OP_RETURN/data-only** (Appendix B.5 logic). Go tests green. On-chain broadcast = Phase 2c. |
 | `SYS-HMAC-002/003/004` (GV/subkeys/CS, K_hmac, tag) | 🟡 | Algorithms implemented + KAT-green in TS+Go; on-chain placement (`SYS-HMAC-005`), hash chain (`008`), discoverability (`006`) are Phase 2. |
 | `SYS-HMAC-009` (blinded commitment) | 🟡 | `commit` done TS+Go. |
 | `SYS-TEST-003` (cross-impl vectors) | 🟡 | TS↔Go green; C clause open. |
