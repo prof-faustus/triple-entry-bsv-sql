@@ -1,0 +1,6 @@
+--- PASS: TestDeterministicByteStable (0.00s)
+--- PASS: TestEmbedsVerifiableFields (0.00s)
+--- PASS: TestBillOfLadingMarkedNonNegotiable (0.00s)
+--- PASS: TestEmbedsScannableQR (0.00s)
+PASS
+ok  	te-bsv/services-go/docrender	0.174s

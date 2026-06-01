@@ -45,6 +45,16 @@ CREATE TABLE IF NOT EXISTS te.chain_index (
   PRIMARY KEY (stream_id, seq)
 );
 
+-- Blinding factors for confidential fields (SYS-HMAC-009): the plaintext stays in the DB, the on-chain
+-- change_image is commit(value, r); r is held here so the commitment can be opened/verified by the
+-- entitled parties. The on-chain record never carries the plaintext.
+CREATE TABLE IF NOT EXISTS te.blinding (
+  stream_id text   NOT NULL,
+  seq       bigint NOT NULL,
+  r         bytea  NOT NULL,
+  PRIMARY KEY (stream_id, seq)
+);
+
 -- Generic capture trigger: writes one outbox row per changed column, atomically (SYS-PG-002).
 CREATE OR REPLACE FUNCTION te.capture() RETURNS trigger LANGUAGE plpgsql AS $$
 DECLARE
@@ -104,7 +114,7 @@ END;
 $$;
 
 -- Register a table for journalling and attach the capture trigger (SYS-PG-005 — plain SQL/DDL).
-CREATE OR REPLACE FUNCTION te.journal_table(p_table regclass, p_stream text, p_pk text[])
+CREATE OR REPLACE FUNCTION te.journal_table(p_table regclass, p_stream text, p_pk text[], p_confidential boolean DEFAULT false)
 RETURNS void LANGUAGE plpgsql AS $$
 DECLARE tn text;
 BEGIN
@@ -112,9 +122,9 @@ BEGIN
   SELECT n.nspname || '.' || c.relname INTO tn
     FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
    WHERE c.oid = p_table;
-  INSERT INTO te.journalled(table_name, stream_id, pk_columns)
-  VALUES (tn, p_stream, p_pk)
-  ON CONFLICT (table_name) DO UPDATE SET stream_id = EXCLUDED.stream_id, pk_columns = EXCLUDED.pk_columns;
+  INSERT INTO te.journalled(table_name, stream_id, pk_columns, confidential)
+  VALUES (tn, p_stream, p_pk, p_confidential)
+  ON CONFLICT (table_name) DO UPDATE SET stream_id = EXCLUDED.stream_id, pk_columns = EXCLUDED.pk_columns, confidential = EXCLUDED.confidential;
   EXECUTE format('DROP TRIGGER IF EXISTS te_capture ON %s', tn);
   EXECUTE format('CREATE TRIGGER te_capture AFTER INSERT OR UPDATE OR DELETE ON %s
                   FOR EACH ROW EXECUTE FUNCTION te.capture()', tn);
@@ -132,4 +142,18 @@ LANGUAGE sql AS $$
   FROM te.outbox o
   WHERE o.table_name = p_table AND o.row_id = convert_to(p_row, 'UTF8')
   ORDER BY o.column_id, o.seq DESC;
+$$;
+
+-- SQL-callable PDF render surface (SYS-DOC-005): returns the deterministic field-set + on-chain anchors
+-- (object_id, per-column txid for the BURI) for a row; services-go/docrender turns this into the
+-- byte-stable PDF paper copy (with embedded BURI + scannable QR).
+CREATE OR REPLACE FUNCTION te.render_pdf(p_table text, p_row text)
+RETURNS jsonb LANGUAGE sql AS $$
+  SELECT jsonb_build_object(
+    'object_id', p_table || '/' || p_row,
+    'anchors', coalesce((
+      SELECT jsonb_agg(jsonb_build_object(
+        'column', column_id, 'op', op, 'stream_seq', stream_seq,
+        'txid', encode(txid, 'hex'), 'anchored', anchored))
+      FROM te.verify(p_table, p_row)), '[]'::jsonb));
 $$;

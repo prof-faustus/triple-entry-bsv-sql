@@ -1,0 +1,12 @@
+funded from SV Node wallet 888973c1ec1eb56d697453d166c84e94eb10989e7d65017feb1f3b6d361111c6:0
+confidential third entry accepted by SV Node: aee29fe28dac03091794e2200794b62b71f2334ec338bd1c28b49796b684dcdc
+  plaintext "SALARY-CONFIDENTIAL-149995" is absent from the on-chain tx ✓ (confidentiality)
+  on-chain change_image is a 32-byte blinded commitment (image_kind=COMMITMENT) ✓
+  ECDH-HMAC tag verifies over the on-chain commitment ✓ (integrity/discoverability)
+  commitment opens to (value, blinding) and binds it; wrong value rejected ✓
+RESULT: CONFIDENTIAL PATH PASS (SYS-HMAC-009) — value off-chain, commitment+tag on-chain, accepted by SV Node
+----- SQL te.render_pdf (SYS-DOC-005) -----
+ERROR:  function te.render_pdf(unknown, unknown) does not exist
+LINE 1: SELECT te.render_pdf('public.accounts','1');
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.

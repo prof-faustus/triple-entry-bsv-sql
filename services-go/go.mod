@@ -5,6 +5,7 @@ go 1.26.3
 require (
 	github.com/bsv-blockchain/go-sdk v1.2.24
 	github.com/jackc/pgx/v5 v5.9.2
+	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	te-bsv/cryptocore v0.0.0
 )
 

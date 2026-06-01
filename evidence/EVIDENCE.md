@@ -17,6 +17,9 @@ BSV consensus**; on-chain presence is shown in `10_onchain-confirmations.txt`.
 | `08_pg18-install.txt` | PostgreSQL 18.4 fork (PGDG) install + `te` schema bring-up. |
 | `09_crypto-parity.txt` | `SYS-TEST-003` / Appendix B.1: crypto core **C == TS == Go byte-for-byte** (14 TS, Go, 40/40 C; incl. RFC-4231/5869 + NIST KATs). |
 | `10_onchain-confirmations.txt` | The Phase-4 token mint and Phase-3 third-entry txs **confirmed on the running funded node**. |
+| `11_confidential-path.txt` | `SYS-HMAC-009`: a confidential change recorded on-chain as a **blinded commitment** (32 bytes), **plaintext absent from the tx**, tag verifies over the commitment, commitment opens to (value, blinding); accepted by the SV Node. |
+| `12_sql-render-pdf.txt` | `SYS-DOC-005`: `te.render_pdf()` SQL function returns the field-set + on-chain anchor (txid for the BURI). |
+| `13_pdf-render-qr.txt` | `SYS-DOC-002/003/004`: deterministic PDF, embedded fields, **scannable QR of the BURI**, B/L non-negotiable marking. |
 
 Reproduce: `node-docker/regtest-up.sh` (Teranode), `pg-fork/install-pg18.sh` (PG18), and the
 `services-go/run-*-wsl.sh` / `pg-fork/run-pg-e2e-wsl.sh` runners. Spec/decisions/verify/security:

@@ -1,0 +1,13 @@
+=== te.render_pdf('public.accounts','1') (SYS-DOC-005) ===
+{
+    "anchors": [
+        {
+            "op": 2,
+            "txid": "2d44f85626152823a4a966e215f47f027b6b90a1bf8d0c59098b1324f2e8950b",
+            "column": "balance",
+            "anchored": true,
+            "stream_seq": 3
+        }
+    ],
+    "object_id": "public.accounts/1"
+}

@@ -13,6 +13,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	qrcode "github.com/skip2/go-qrcode"
 )
 
 // Fields are the inputs to a paper copy, gathered from chain + off-chain record.
@@ -55,6 +57,30 @@ func (f Fields) BodyHash() string {
 	return hex.EncodeToString(h[:])
 }
 
+// qrOps renders a deterministic QR of `content` as filled PDF rectangles (vector, no image embed) so a
+// verifier can scan the BURI off the paper copy (SYS-DOC-002). Returns "" if encoding fails.
+func qrOps(content string) string {
+	q, err := qrcode.New(content, qrcode.Medium)
+	if err != nil {
+		return ""
+	}
+	bm := q.Bitmap() // [][]bool incl. quiet zone; deterministic for fixed content+level
+	const cell = 3.0
+	const ox, oy = 410.0, 770.0 // top-right; draw downward
+	var s strings.Builder
+	s.WriteString("0 0 0 rg\n")
+	for r := range bm {
+		for c := range bm[r] {
+			if bm[r][c] {
+				x := ox + float64(c)*cell
+				y := oy - float64(r)*cell
+				fmt.Fprintf(&s, "%.0f %.0f %.0f %.0f re f\n", x, y, cell, cell)
+			}
+		}
+	}
+	return s.String()
+}
+
 func esc(s string) string {
 	s = strings.ReplaceAll(s, "\\", "\\\\")
 	s = strings.ReplaceAll(s, "(", "\\(")
@@ -76,6 +102,7 @@ func RenderPDF(f Fields) []byte {
 		}
 	}
 	content.WriteString("ET\n")
+	content.WriteString(qrOps(f.BURI)) // scannable QR of the BURI (SYS-DOC-002)
 	cs := content.String()
 
 	objs := []string{

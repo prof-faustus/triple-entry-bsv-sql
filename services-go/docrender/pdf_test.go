@@ -51,6 +51,13 @@ func TestBillOfLadingMarkedNonNegotiable(t *testing.T) {
 	}
 }
 
+func TestEmbedsScannableQR(t *testing.T) {
+	pdf := string(RenderPDF(sample("invoice")))
+	if strings.Count(pdf, " re f") < 50 {
+		t.Fatal("expected a scannable QR rendered as PDF rectangles (SYS-DOC-002)")
+	}
+}
+
 func TestBodyHashStableAndSelfConsistent(t *testing.T) {
 	f := sample("proof_of_delivery")
 	if f.BodyHash() != f.BodyHash() {

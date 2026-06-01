@@ -48,6 +48,17 @@ so that is one shot once a funded key exists.
 `D:\claude\cto\spec\source\` — it was NOT missing. `spec/CTO-PRIMITIVES.md` (re-derivation) reconciled
 against it; see `VERIFY-LOG.md` E1.
 
+### Production-hardening completed (2026-06-01)
+- **QR in PDF** (`SYS-DOC-002`): `docrender` now draws a **scannable QR of the BURI** (vector rects,
+  deterministic); plus the existing byte-stable fields + B/L non-negotiable marking. Tests green.
+- **Confidential field path** (`SYS-HMAC-009`): `cmd/confidente2e` records a confidential change on the
+  SV Node as a **blinded commitment** — plaintext **never on chain**, tag verifies over the commitment,
+  commitment opens to (value, blinding). Schema is confidential-ready (`te.blinding`,
+  `journal_table(...,confidential)`).
+- **SQL `te_render_pdf()`** (`SYS-DOC-005`): SQL function returns the field-set + on-chain anchors
+  (txid → BURI) for a row; `docrender` turns it into the PDF. Verified end-to-end.
+Evidence: `evidence/11..13`.
+
 ### Post-build follow-ups (operator-directed "all")
 - **Repo pushed**: private GitHub `prof-faustus/triple-entry-bsv-sql` (master).
 - **Appendix B.1 closed**: `crypto-core/c` C core reproduces the shared vectors 40/40 byte-for-byte
